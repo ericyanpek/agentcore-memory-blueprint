@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "memory-bridge": {
+      "type": "stdio",
+      "command": "${CLAUDE_PROJECT_DIR}/bridge/.venv/bin/python",
+      "args": ["${CLAUDE_PROJECT_DIR}/bridge/server.py"],
+      "env": {
+        "MEMORY_BRIDGE_DEPLOYMENT": "${CLAUDE_PROJECT_DIR}/build/poc-deployment.json",
+        "MEMORY_BRIDGE_IDENTITY_POOL_ID": "${MEMORY_BRIDGE_IDENTITY_POOL_ID}"
+      }
+    }
+  }
+}
