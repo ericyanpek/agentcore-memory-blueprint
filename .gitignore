@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+coverage.xml
+htmlcov/
+node_modules/
+cdk.out/
+build/
+.playwright-mcp/
+infra/layer/python/*
+!infra/layer/python/.gitkeep

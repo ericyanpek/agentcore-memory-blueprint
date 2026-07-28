@@ -1,0 +1,24 @@
+{
+  "version": "0",
+  "id": "01JDEMO-CANDIDATE-0001",
+  "detail-type": "memory.candidate.proposed",
+  "source": "demo.analytics-agent",
+  "account": "123456789012",
+  "time": "2026-07-28T10:05:00Z",
+  "region": "us-east-1",
+  "resources": [],
+  "detail": {
+    "schema_version": "1.0",
+    "candidate_id": "cand-01JDEMO0001",
+    "project_id": "analytics-poc",
+    "proposer_actor_id": "user:bob-456",
+    "category": "constraint",
+    "statement": "The curated revenue view excludes refunded orders; analyses that require gross booked revenue must use the booking ledger.",
+    "evidence_ref": "trace://1-abcdef01-0123456789abcdef01234567/tool/4",
+    "confidence": 0.96,
+    "privacy_classification": "internal",
+    "expires_at": null,
+    "promotion_hint": "knowledge_base"
+  }
+}
+

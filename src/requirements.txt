@@ -1,0 +1,3 @@
+# Bundle these with the Lambda artifact. Do not rely on Lambda's runtime copy:
+# older botocore models reject long-term record metadata before sending it.
+boto3>=1.43.36,<2

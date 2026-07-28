@@ -1,0 +1,21 @@
+{
+  "version": "0",
+  "id": "01JDEMO-TURN-0001",
+  "detail-type": "conversation.turn.completed",
+  "source": "demo.analytics-agent",
+  "account": "123456789012",
+  "time": "2026-07-28T10:00:00Z",
+  "region": "us-east-1",
+  "resources": [],
+  "detail": {
+    "schema_version": "1.0",
+    "project_id": "analytics-poc",
+    "actor_id": "user:alice-123",
+    "session_id": "churn-analysis-001",
+    "turn_id": "turn-0001",
+    "trace_id": "1-abcdef01-0123456789abcdef01234567",
+    "personal_memory_event_id": "1722160800#abcdef",
+    "shared_candidate_proposed": false
+  }
+}
+
