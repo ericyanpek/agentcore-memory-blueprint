@@ -493,6 +493,29 @@ def main() -> int:
             and bool(well_formed.get("candidate_id")),
         )
 
+        # The policy gate accepts the submission (HTTP 202) but marks it
+        # ineligible. Reporting PENDING_REVIEW here would tell the user a
+        # reviewer will see something that was already rejected.
+        restricted = alice.call(
+            "memory_propose_shared",
+            statement=(
+                "Customer ACME churned after their CFO disclosed an internal "
+                "budget freeze during a private call."
+            ),
+            category="fact",
+            evidence_ref="s3://audit-bucket/traces/2026-07-28/restricted.json",
+            confidence=0.98,
+            privacy_classification="restricted",
+        )
+        record(
+            "A policy-rejected proposal is not reported as awaiting review",
+            "status reflects REJECTED_POLICY, not PENDING_REVIEW",
+            f"status={restricted.get('status')} "
+            f"eligible={restricted.get('eligible_for_review')}",
+            restricted.get("status") != "PENDING_REVIEW"
+            and restricted.get("eligible_for_review") is False,
+        )
+
         captured = alice.call(
             "memory_capture_evidence",
             excerpt=(

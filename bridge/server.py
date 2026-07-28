@@ -385,14 +385,23 @@ def memory_propose_shared(
         )
     if status >= 400:
         return _fail(f"proposal rejected (HTTP {status}): {body}")
+    # Report what the policy gate actually decided. Claiming PENDING_REVIEW for
+    # every accepted submission would tell the user a restricted or low-confidence
+    # statement is awaiting review when it was already rejected and no reviewer
+    # will ever see it.
+    eligible = bool(body.get("eligible_for_review")) if isinstance(body, dict) else False
     return {
         "ok": True,
         "candidate_id": candidate_id,
-        "status": "PENDING_REVIEW",
+        "status": "PENDING_REVIEW" if eligible else "REJECTED_POLICY",
+        "eligible_for_review": eligible,
         "proposer": actor_id,
         "note": (
             "Submitted for human review. It becomes shared knowledge only after "
             "a project reviewer approves it."
+            if eligible
+            else "Rejected by policy before reaching a reviewer: restricted "
+            "classification or confidence below the 0.70 threshold."
         ),
     }
 
