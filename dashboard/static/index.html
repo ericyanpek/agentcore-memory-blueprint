@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AgentCore Memory Governance Dashboard</title>
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Memory Governance</h1>
+        <p id="deployment-line" class="muted">loading deployment…</p>
+      </div>
+      <nav class="tabs" aria-label="Dashboard views">
+        <button class="tab is-active" data-view="personal" type="button">
+          Personal Memory
+        </button>
+        <button class="tab" data-view="shared" type="button">
+          Shared Memory
+        </button>
+        <button class="tab" data-view="review" type="button">
+          Review Queue
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="view-personal" class="view">
+        <div class="panel">
+          <h2>Scope</h2>
+          <div class="field-row">
+            <label class="field">
+              <span>Actor ID</span>
+              <select id="actor-select"></select>
+            </label>
+            <label class="field">
+              <span>Session ID</span>
+              <select id="session-select"></select>
+            </label>
+            <button id="personal-refresh" class="primary" type="button">
+              Load
+            </button>
+          </div>
+          <p class="muted" id="personal-scope-note"></p>
+        </div>
+
+        <div class="panel">
+          <h2>
+            Short-term events
+            <span class="count" id="stm-count">0</span>
+          </h2>
+          <p class="muted">
+            Raw conversation turns for this actor and session only.
+          </p>
+          <div id="stm-list" class="list"></div>
+        </div>
+
+        <div class="grid-two">
+          <div class="panel">
+            <h2>
+              Preferences
+              <span class="count" id="pref-count">0</span>
+            </h2>
+            <p class="muted mono" id="pref-namespace"></p>
+            <div id="pref-list" class="list"></div>
+          </div>
+          <div class="panel">
+            <h2>
+              Session summary
+              <span class="count" id="summary-count">0</span>
+            </h2>
+            <p class="muted mono" id="summary-namespace"></p>
+            <div id="summary-list" class="list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-shared" class="view is-hidden">
+        <div class="panel">
+          <h2>Project namespace</h2>
+          <p class="mono" id="shared-namespace">…</p>
+          <p class="muted">
+            Fixed namespace. Only reviewed records with
+            <code>review_status=approved</code> are retrievable by the agent.
+          </p>
+        </div>
+
+        <div class="panel">
+          <h2>
+            Inventory browse
+            <span class="count" id="inventory-count">0</span>
+          </h2>
+          <p class="muted">
+            <code>ListMemoryRecords</code> — full namespace listing, no scoring.
+          </p>
+          <button id="inventory-refresh" class="primary" type="button">
+            Browse namespace
+          </button>
+          <div id="inventory-list" class="list"></div>
+        </div>
+
+        <div class="panel">
+          <h2>
+            Semantic search
+            <span class="count" id="search-count">0</span>
+          </h2>
+          <p class="muted">
+            <code>RetrieveMemoryRecords</code> — scored, with
+            <code>project_id</code> and <code>review_status</code> metadata
+            filters.
+          </p>
+          <div class="field-row">
+            <label class="field field-grow">
+              <span>Query</span>
+              <input
+                id="search-query"
+                type="text"
+                value="refunds and gross booked revenue"
+                maxlength="500"
+              />
+            </label>
+            <label class="field field-narrow">
+              <span>topK</span>
+              <input id="search-topk" type="number" value="5" min="1" max="20" />
+            </label>
+            <button id="search-run" class="primary" type="button">Search</button>
+          </div>
+          <div id="search-list" class="list"></div>
+        </div>
+      </section>
+
+      <section id="view-review" class="view is-hidden">
+        <div class="panel">
+          <h2>Reviewer sign-in</h2>
+          <p class="muted">
+            Candidates are read through the Cognito-protected Review API. The
+            browser holds no AWS credentials and never queries DynamoDB.
+          </p>
+          <div class="field-row">
+            <label class="field">
+              <span>Email</span>
+              <input id="reviewer-email" type="email" autocomplete="username" />
+            </label>
+            <label class="field">
+              <span>Password</span>
+              <input
+                id="reviewer-password"
+                type="password"
+                autocomplete="current-password"
+              />
+            </label>
+            <button id="reviewer-signin" class="primary" type="button">
+              Sign in
+            </button>
+            <button id="reviewer-signout" class="ghost" type="button">
+              Sign out
+            </button>
+          </div>
+          <p class="muted" id="reviewer-status">Not signed in.</p>
+        </div>
+
+        <div class="panel">
+          <h2>
+            Candidates
+            <span class="count" id="review-count">0</span>
+          </h2>
+          <div class="field-row">
+            <label class="field">
+              <span>Status filter</span>
+              <select id="review-status-filter">
+                <option value="">All</option>
+                <option value="PENDING_REVIEW">PENDING_REVIEW</option>
+                <option value="PUBLISHED">PUBLISHED</option>
+                <option value="PUBLISH_FAILED">PUBLISH_FAILED</option>
+                <option value="REJECTED_REVIEW">REJECTED_REVIEW</option>
+                <option value="REJECTED_POLICY">REJECTED_POLICY</option>
+              </select>
+            </label>
+            <button id="review-refresh" class="primary" type="button">
+              Load candidates
+            </button>
+          </div>
+          <div id="review-list" class="list"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast is-hidden" role="status"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>
