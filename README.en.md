@@ -18,50 +18,71 @@ An AWS reference implementation for a multi-user data analysis agent that:
 ## What Is Distinctive
 
 Memory here is a **governed asset with an authority level**, not a smarter vector
-store. Each property below is locatable in the code and verified end to end against
-a real deployment — see the [experiment report](docs/实验报告.md) (14 checks) and the
-[desktop integration design](docs/桌面客户端集成设计.md) (8 + 17 checks).
+store. The four properties below are not common practice, and each has external
+evidence behind it — full argument, including the evidence that cuts the other way,
+in **[design rationale](docs/design-rationale.md)**.
 
-**Isolation is enforced by AWS, not by application code.** One shared IAM role plus a
-Cognito Identity Pool session tag derived from the verified `sub` claim gives each
-desktop client its own boundary. **Mirror-tested**: the same role grants Alice access
-to Alice and denies her Bob, and inverts when Bob signs in — which rules out a policy
-that merely happens to be hardcoded. 100 engineers = 1 role + 1 policy; onboarding
-requires no AWS-side change.
+**1. Approved text is stored verbatim, with no second LLM extraction pass.**
+This is both the governance-correct choice and, counterintuitively, the
+performance- and cost-optimal one. An ICLR 2026 factorial study (3 write strategies ×
+3 retrieval methods, LoCoMo's 1,540 non-adversarial questions) found that **retrieval
+method moves accuracy 20 points (57.1% → 77.2%) while write strategy moves it only
+3–8 — and raw chunked storage, with zero LLM calls, matches or outperforms mem0-style
+extraction and MemGPT-style summarization**
+([arXiv:2603.02473](https://arxiv.org/abs/2603.02473)). The extraction pipeline is the
+most expensive, most lossy, least rewarding link in the chain. Corroborating: mem0's
+2026 rewrite removed `UPDATE`/`DELETE` from the write path entirely, reverting to a
+single append with contradictions coexisting and adjudicated at ranking time — a
+product built on write-time adjudication abandoning write-time adjudication.
 
-**The shared write path is closed at the IAM layer.** No agent and no desktop client
-holds `BatchCreateMemoryRecords`; team knowledge can only be *proposed*. Capability
-that is not exposed does not exist: no MCP tool accepts an `actor_id` or `namespace`
-parameter, and no tool writes shared memory directly.
+**2. The four knowledge layers (logs / memory / Knowledge Base / Skills) are divided
+by authority.** The prevailing working / episodic / semantic / procedural taxonomy
+comes from Tulving 1972 by way of CoALA. A December 2025 survey with 47 authors states
+that traditional taxonomies are insufficient for contemporary memory systems and
+re-cuts the space by forms (token / parametric / latent) × functions × dynamics
+([arXiv:2512.13564](https://arxiv.org/abs/2512.13564)). Dividing by **authority**
+matters because authority is an operational property — it determines who may write and
+what overrides what. "Episodic" only classifies.
 
-**Approved text is stored verbatim, with no second extraction pass.** What the
-reviewer read is what is stored (`src/blueprint/memory.py`). The record also carries
-`candidate_id` as metadata pointing back to the audit table, closing the loop from
-statement to approver to evidence.
+**3. Retrieval precedence is absolute, and travels with the context.**
+Live data > Skills > authoritative documents > reviewed team memory > personal
+preference > model inference, with preferences allowed to affect presentation only.
+This targets three named failure modes: **experience following** (an agent reproduces
+the quality of whatever it retrieves, errors included); **lost-in-the-middle**
+(mid-context evidence is recovered markedly less reliably,
+[Liu et al., TACL 2024](https://arxiv.org/abs/2307.03172)); and **context rot**, which
+is worst when distractors are semantically close to the answer — the defining
+characteristic of a memory store, since memory is retrieved *because* it is similar.
+So "memory never overrides live data" is not fastidiousness; it is the structural
+constraint that stops stale memory from contaminating a current judgment. In
+implementation, `src/agent/context_builder.py` puts `conflict_rule` and the precedence
+order into the prompt together with a citation envelope (record ID, namespaces, score,
+strategy ID) — precedence is an explicit instruction, not a convention in a document.
 
-**Context carries source labels and a conflict rule.** `src/agent/context_builder.py`
-attaches a citation envelope to every retrieved record (record ID, namespaces, score,
-strategy ID, memory ID) and puts `conflict_rule` into the prompt alongside the
-precedence order — so precedence is an explicit instruction handed to the model with
-the context, not a convention living only in a document: live data > authoritative
-documents > reviewed team memory > personal preference, with preferences allowed to
-affect presentation only.
+**4. The human review gate is a currently scarce anti-poisoning control.**
+Not a theoretical risk. **MINJA** writes malicious records into a memory bank through
+ordinary conversation alone, with no database access, and guard models, embedding
+sanitization, and prompt-based detection **all fail against it**
+([arXiv:2503.03704](https://arxiv.org/abs/2503.03704), NeurIPS 2025). Publicly
+reported incidents include SpAIware, LayerX's "Tainted Memories", and Radware's
+"ZombieAgent". Most on point is **MemoryTrap** — reported and remediated against
+Claude Code, where one poisoned memory object propagated across sessions, users, and
+subagents
+([Help Net Security](https://www.helpnetsecurity.com/2026/04/14/idan-habler-cisco-agentic-ai-memory-attacks/)).
+This blueprint is precisely about Claude Code and Codex sharing one cloud memory,
+which is the direct justification for gating the shared write path.
 
-**Idempotency and audit are coherent in the details.** Publication uses `candidate_id`
-as the `requestIdentifier`; candidate registration uses a conditional write plus a
-`workflow_execution_id` comparison, so EventBridge's at-least-once delivery cannot
-produce duplicate records. Review tokens live only in server-side DynamoDB and the SNS
-notification states explicitly that the token is omitted. Confidence is persisted as
-an integer `confidence_basis_points`, avoiding float precision issues.
+> **The scope must be stated plainly: review covers the team tier only.** Personal
+> long-term memory is written by AgentCore extraction and short-term events are written
+> directly; neither is reviewed, so MemoryTrap-style propagation remains applicable
+> there. IAM confines a personal record's blast radius to one actor — but that is
+> isolation, not review.
 
-**Known failure modes are documented rather than hidden.** Both reports record the
-**false positives** found after a first run that "passed" everything: asserting only
-that a forbidden thing was not visible **passes vacuously** when the data never
-existed. The fix was a control assertion (Alice's namespace must be non-empty) and
-checking the failure **reason code** rather than only that a call failed.
-
-Why these choices, with the external evidence for and against each:
-**[design rationale](docs/design-rationale.md)**. Known gaps and planned work,
+These properties are verified end to end against a real deployment: the
+[experiment report](docs/实验报告.md) (14 checks) and the
+[desktop integration design](docs/桌面客户端集成设计.md) (8 + 17 checks, including a
+**mirror test** in which Alice's and Bob's permissions invert under the same role,
+ruling out a policy that merely happens to be hardcoded). Known gaps and planned work,
 including evidence immutability that is still unenforced and the self-approval path:
 **[roadmap](docs/roadmap.md)**.
 

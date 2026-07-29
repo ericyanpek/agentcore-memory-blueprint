@@ -23,11 +23,21 @@ statement, the reviewer did not actually approve what is stored, and the audit t
 becomes a claim rather than a fact.
 
 **Independent support for the performance side of this choice.** A factorial study
-crossing write strategies against retrieval methods reports that the retrieval
-method dominates end-to-end accuracy while the write strategy contributes a much
-smaller effect, with raw chunked storage — no extraction LLM calls at all —
-matching or exceeding extraction- and summarization-based write paths
-([arXiv:2603.02473](https://arxiv.org/abs/2603.02473)).
+(ICLR 2026) crossing three write strategies — raw chunks, mem0-style extraction,
+MemGPT-style summarization — against three retrieval methods reports that the
+retrieval method dominates: average accuracy spans 20 points across retrieval
+methods (57.1% to 77.2%) but only 3–8 points across write strategies, and raw
+chunked storage with zero LLM calls matches or outperforms the lossy alternatives
+([arXiv:2603.02473](https://arxiv.org/abs/2603.02473), code at
+[memory-probe](https://github.com/boqiny/memory-probe)). Failure analysis in the same
+paper locates most breakdowns at the retrieval stage rather than at utilization.
+
+The paper's own stated limitations matter for how far this generalizes: a single
+backbone model, a single benchmark, a fixed retrieval budget, prompt-based
+reimplementations rather than fully learned memory systems, and LLM judges for
+correctness. It explicitly notes that raw chunking's advantage **may diminish under
+tighter context budgets** where compression becomes necessary — which is the same
+budget dependence recorded in section 2 and in [roadmap.md](roadmap.md) item 5.
 
 **Market evidence in the same direction.** mem0's 2026 algorithm revision removed
 `UPDATE` and `DELETE` from its write path in favour of a single-pass append,
