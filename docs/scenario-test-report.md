@@ -1,5 +1,8 @@
 # AgentCore Memory Governance — Scenario Test Report
 
+> Auto-generated from the live run. The primary interpreted report is
+> [实验报告](实验报告.md) (Chinese).
+
 - Run tag: `973d4267`
 - Started: 2026-07-28T14:23:09.476383+00:00
 - Finished: 2026-07-28T14:24:30.690491+00:00

@@ -1,5 +1,7 @@
 # Verified AWS References
 
+> Translation. The primary document is [参考资料.md](参考资料.md) (Chinese).
+
 These links were checked while building the blueprint:
 
 - [Get started with AgentCore Memory](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-get-started.html)

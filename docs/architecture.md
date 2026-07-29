@@ -1,5 +1,7 @@
 # Architecture and Knowledge Boundaries
 
+> Translation. The primary document is [架构设计.md](架构设计.md) (Chinese).
+
 ## Design Goals
 
 - Multi-user project with isolated personal preferences.

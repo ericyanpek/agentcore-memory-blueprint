@@ -907,7 +907,8 @@ def render_report(
     lines = [
         "# AgentCore Memory Governance — Scenario Test Report",
         "",
-        "> 中文版实验报告（含过程与结论解读）：[docs/实验报告.md](实验报告.md)",
+        "> Auto-generated from the live run. The primary interpreted report is "
+        "[实验报告](实验报告.md) (Chinese).",
         "",
         f"- Run tag: `{RUN_TAG}`",
         f"- Started: {started_at}",

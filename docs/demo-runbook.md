@@ -1,5 +1,7 @@
 # SA Demo Runbook
 
+> Translation. The primary document is [演示手册.md](演示手册.md) (Chinese).
+
 ## Story
 
 Five analysts use one project agent for a customer-churn project.

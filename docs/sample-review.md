@@ -1,5 +1,7 @@
 # Official AgentCore Memory Sample Review
 
+> Translation. The primary document is [评估记录.md](评估记录.md) (Chinese).
+
 ## Review Scope
 
 The review used the AWS Labs repository at commit
