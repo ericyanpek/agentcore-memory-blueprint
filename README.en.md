@@ -2,9 +2,7 @@
 
 > This is the English translation. The primary document is
 > **[README.md](README.md)** (Chinese); where the two differ, the Chinese version
-> is authoritative.
->
-> 中文文档：**[实验报告](docs/实验报告.md)** · [桌面客户端集成设计](docs/桌面客户端集成设计.md) · [架构设计](docs/架构设计.md) · [设计取舍依据](docs/设计取舍依据.md) · [下一步演进](docs/下一步演进.md) · [演示手册](docs/演示手册.md)
+> is authoritative. Full document table under [Repository](#repository).
 
 An AWS reference implementation for a multi-user data analysis agent that:
 
@@ -17,74 +15,34 @@ An AWS reference implementation for a multi-user data analysis agent that:
 
 ## What Is Distinctive
 
-Memory here is a **governed asset with an authority level**, not a smarter vector
-store. The four properties below are not common practice, and each has external
-evidence behind it — full argument, including the evidence that cuts the other way,
-in **[design rationale](docs/design-rationale.md)**.
+Memory is a **governed asset with an authority level**, not a smarter vector store.
+Four design judgments; reasoning and counter-evidence in
+[design rationale](docs/design-rationale.md):
 
-**1. Approved text is stored verbatim, with no second LLM extraction pass.**
-This is both the governance-correct choice and, counterintuitively, the
-performance- and cost-optimal one. An ICLR 2026 factorial study (3 write strategies ×
-3 retrieval methods, LoCoMo's 1,540 non-adversarial questions) found that **retrieval
-method moves accuracy 20 points (57.1% → 77.2%) while write strategy moves it only
-3–8 — and raw chunked storage, with zero LLM calls, matches or outperforms mem0-style
-extraction and MemGPT-style summarization**
-([arXiv:2603.02473](https://arxiv.org/abs/2603.02473)). The extraction pipeline is the
-most expensive, most lossy, least rewarding link in the chain. Corroborating: mem0's
-2026 rewrite removed `UPDATE`/`DELETE` from the write path entirely, reverting to a
-single append with contradictions coexisting and adjudicated at ranking time — a
-product built on write-time adjudication abandoning write-time adjudication.
+- **Approved text is stored verbatim, with no second extraction pass.** Correct for
+  governance and also optimal for cost and accuracy — a factorial study found
+  retrieval method moves accuracy 20 points while write strategy moves 3–8, and
+  zero-LLM raw storage matches the extraction pipelines
+  ([ICLR 2026](https://arxiv.org/abs/2603.02473)).
+- **Knowledge layers are divided by authority, not by cognitive-science vocabulary.**
+  Authority is operational: it derives who may write and what overrides what.
+  `episodic` only classifies.
+- **Retrieval precedence is absolute and travels with the context.** Live data >
+  Skills > authoritative documents > reviewed team memory > personal preference.
+  Memory never overrides current data — the structural constraint against stale
+  memory contaminating a judgment, aimed at experience following and context rot.
+- **The human review gate is a scarce anti-poisoning control.** MINJA shows ordinary
+  conversation suffices to poison a memory bank and that conventional defences all
+  fail; MemoryTrap propagated across sessions and users in Claude Code. This project
+  is desktop clients sharing one cloud memory, so shared writes must pass a human.
 
-**2. The four knowledge layers (logs / memory / Knowledge Base / Skills) are divided
-by authority.** The prevailing working / episodic / semantic / procedural taxonomy
-comes from Tulving 1972 by way of CoALA. A December 2025 survey with 47 authors states
-that traditional taxonomies are insufficient for contemporary memory systems and
-re-cuts the space by forms (token / parametric / latent) × functions × dynamics
-([arXiv:2512.13564](https://arxiv.org/abs/2512.13564)). Dividing by **authority**
-matters because authority is an operational property — it determines who may write and
-what overrides what. "Episodic" only classifies.
+> Review covers the **team tier only**. Personal long-term memory and short-term
+> events are not reviewed — IAM bounds their blast radius, but isolation is not review.
 
-**3. Retrieval precedence is absolute, and travels with the context.**
-Live data > Skills > authoritative documents > reviewed team memory > personal
-preference > model inference, with preferences allowed to affect presentation only.
-This targets three named failure modes: **experience following** (an agent reproduces
-the quality of whatever it retrieves, errors included); **lost-in-the-middle**
-(mid-context evidence is recovered markedly less reliably,
-[Liu et al., TACL 2024](https://arxiv.org/abs/2307.03172)); and **context rot**, which
-is worst when distractors are semantically close to the answer — the defining
-characteristic of a memory store, since memory is retrieved *because* it is similar.
-So "memory never overrides live data" is not fastidiousness; it is the structural
-constraint that stops stale memory from contaminating a current judgment. In
-implementation, `src/agent/context_builder.py` puts `conflict_rule` and the precedence
-order into the prompt together with a citation envelope (record ID, namespaces, score,
-strategy ID) — precedence is an explicit instruction, not a convention in a document.
-
-**4. The human review gate is a currently scarce anti-poisoning control.**
-Not a theoretical risk. **MINJA** writes malicious records into a memory bank through
-ordinary conversation alone, with no database access, and guard models, embedding
-sanitization, and prompt-based detection **all fail against it**
-([arXiv:2503.03704](https://arxiv.org/abs/2503.03704), NeurIPS 2025). Publicly
-reported incidents include SpAIware, LayerX's "Tainted Memories", and Radware's
-"ZombieAgent". Most on point is **MemoryTrap** — reported and remediated against
-Claude Code, where one poisoned memory object propagated across sessions, users, and
-subagents
-([Help Net Security](https://www.helpnetsecurity.com/2026/04/14/idan-habler-cisco-agentic-ai-memory-attacks/)).
-This blueprint is precisely about Claude Code and Codex sharing one cloud memory,
-which is the direct justification for gating the shared write path.
-
-> **The scope must be stated plainly: review covers the team tier only.** Personal
-> long-term memory is written by AgentCore extraction and short-term events are written
-> directly; neither is reviewed, so MemoryTrap-style propagation remains applicable
-> there. IAM confines a personal record's blast radius to one actor — but that is
-> isolation, not review.
-
-These properties are verified end to end against a real deployment: the
-[experiment report](docs/实验报告.md) (14 checks) and the
-[desktop integration design](docs/桌面客户端集成设计.md) (8 + 17 checks, including a
-**mirror test** in which Alice's and Bob's permissions invert under the same role,
-ruling out a policy that merely happens to be hardcoded). Known gaps and planned work,
-including evidence immutability that is still unenforced and the self-approval path:
-**[roadmap](docs/roadmap.md)**.
+Verified against a real deployment: [experiment report](docs/实验报告.md), 14 checks ·
+[desktop integration design](docs/桌面客户端集成设计.md), 8 + 17 checks (including a
+mirror test where Alice's and Bob's permissions invert under the same role). Known
+gaps: [roadmap](docs/roadmap.md).
 
 ## Architecture
 
@@ -218,20 +176,16 @@ inside a memory demo.
 This is a POC. The boundaries below are deliberate; treating them as production-ready
 would misrepresent what has been validated.
 
-- **Review covers the shared tier only.** Personal long-term memory is written by
-  AgentCore extraction with no review step. "Memory is reviewed" is true of team
-  knowledge, not of personal preferences.
 - **Personal isolation depends on which path is used.** The desktop path enforces it
   in IAM. The AgentCore Runtime role serves every user and therefore relies on
   application-level actor ownership — the most significant open item.
-- **The policy gate reads declared labels.** It checks a self-reported privacy
-  classification and confidence score; it does not inspect content for credentials
-  or personal data.
+- **The policy gate reads declared labels**, not content; it does not inspect for
+  credentials or personal data.
 - **Approved facts have no supersession path.** A statement that later becomes false
   stays retrievable until the resource expiry.
 - **Governance properties are validated; answer quality is not measured.** No claim
   is made that memory improves output quality.
 
-Full per-item severity tables: [实验报告](docs/实验报告.md) section 9 and
-[桌面客户端集成设计](docs/桌面客户端集成设计.md) section 11. Planned remediation in
-priority order: [roadmap](docs/roadmap.md).
+Per-item severity tables: [实验报告](docs/实验报告.md) section 9 and
+[桌面客户端集成设计](docs/桌面客户端集成设计.md) section 11; remediation plan:
+[roadmap](docs/roadmap.md).
