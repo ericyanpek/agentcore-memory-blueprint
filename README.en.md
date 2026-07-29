@@ -18,28 +18,51 @@ An AWS reference implementation for a multi-user data analysis agent that:
 ## What Is Distinctive
 
 Memory here is a **governed asset with an authority level**, not a smarter vector
-store. Four properties follow from that, each verified end to end against a real
-deployment — see the [experiment report](docs/实验报告.md) (14 checks) and the
+store. Each property below is locatable in the code and verified end to end against
+a real deployment — see the [experiment report](docs/实验报告.md) (14 checks) and the
 [desktop integration design](docs/桌面客户端集成设计.md) (8 + 17 checks).
 
-1. **Isolation is enforced by AWS, not by application code.** One shared IAM role
-   plus a Cognito Identity Pool session tag derived from the verified `sub` claim
-   gives each desktop client its own boundary. Mirror-tested: the same role grants
-   Alice access to Alice and denies her Bob, and inverts when Bob signs in. Adding
-   an engineer requires no AWS-side change.
-2. **The shared write path is closed.** No agent and no desktop client holds
-   `BatchCreateMemoryRecords`. Team knowledge can only be *proposed*; an automated
-   policy gate runs before any human sees it, and only the publisher Lambda writes.
-   This is a pre-write gate, not post-hoc curation.
-3. **Approved text is published verbatim.** No second extraction model rewrites a
-   reviewed statement, so what the reviewer approved is byte-identical to what is
-   stored, recorded alongside the approver identity and an evidence reference.
-4. **Retrieval precedence is deterministic.** Live data outranks documents, which
-   outrank reviewed team memory, which outranks personal preference. Memory can
-   never override current data.
+**Isolation is enforced by AWS, not by application code.** One shared IAM role plus a
+Cognito Identity Pool session tag derived from the verified `sub` claim gives each
+desktop client its own boundary. **Mirror-tested**: the same role grants Alice access
+to Alice and denies her Bob, and inverts when Bob signs in — which rules out a policy
+that merely happens to be hardcoded. 100 engineers = 1 role + 1 policy; onboarding
+requires no AWS-side change.
 
-Why these choices, and the external evidence for and against each:
-**[design rationale](docs/design-rationale.md)**. Known gaps and planned work:
+**The shared write path is closed at the IAM layer.** No agent and no desktop client
+holds `BatchCreateMemoryRecords`; team knowledge can only be *proposed*. Capability
+that is not exposed does not exist: no MCP tool accepts an `actor_id` or `namespace`
+parameter, and no tool writes shared memory directly.
+
+**Approved text is stored verbatim, with no second extraction pass.** What the
+reviewer read is what is stored (`src/blueprint/memory.py`). The record also carries
+`candidate_id` as metadata pointing back to the audit table, closing the loop from
+statement to approver to evidence.
+
+**Context carries source labels and a conflict rule.** `src/agent/context_builder.py`
+attaches a citation envelope to every retrieved record (record ID, namespaces, score,
+strategy ID, memory ID) and puts `conflict_rule` into the prompt alongside the
+precedence order — so precedence is an explicit instruction handed to the model with
+the context, not a convention living only in a document: live data > authoritative
+documents > reviewed team memory > personal preference, with preferences allowed to
+affect presentation only.
+
+**Idempotency and audit are coherent in the details.** Publication uses `candidate_id`
+as the `requestIdentifier`; candidate registration uses a conditional write plus a
+`workflow_execution_id` comparison, so EventBridge's at-least-once delivery cannot
+produce duplicate records. Review tokens live only in server-side DynamoDB and the SNS
+notification states explicitly that the token is omitted. Confidence is persisted as
+an integer `confidence_basis_points`, avoiding float precision issues.
+
+**Known failure modes are documented rather than hidden.** Both reports record the
+**false positives** found after a first run that "passed" everything: asserting only
+that a forbidden thing was not visible **passes vacuously** when the data never
+existed. The fix was a control assertion (Alice's namespace must be non-empty) and
+checking the failure **reason code** rather than only that a call failed.
+
+Why these choices, with the external evidence for and against each:
+**[design rationale](docs/design-rationale.md)**. Known gaps and planned work,
+including evidence immutability that is still unenforced and the self-approval path:
 **[roadmap](docs/roadmap.md)**.
 
 ## Architecture
