@@ -155,11 +155,10 @@ This is a POC. The boundaries below are deliberate:
   most significant open item.
 - **The policy gate reads declared labels**, not content; it does not inspect for
   credentials or personal data.
-- **The proposal contract's shape is enforced; its semantics are not yet conveyed to the
-  model.** The five `category` names are visible to the model, but what counts as a
-  `constraint` — and what should not be proposed at all — appears in no tool description,
-  Skill, or system prompt, and no hook evaluates a completed turn. Proposing therefore
-  depends on the user asking for it; with no proposals, the governance path idles.
+- **The proposal criteria are stated; the trigger is still missing.** The five
+  `category` semantics and what should not be proposed are now in the tool description,
+  but no hook evaluates a completed turn for anything worth proposing, so proposing
+  still depends on the user asking. With no proposals, the governance path idles.
 - **Approved facts have no supersession path**; a statement that becomes false stays
   retrievable until the resource expiry.
 - **Governance properties are validated; answer quality is not measured.**

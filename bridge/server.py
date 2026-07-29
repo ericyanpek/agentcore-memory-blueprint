@@ -330,9 +330,39 @@ def memory_propose_shared(
 
     This does NOT write shared memory. It emits a candidate that a project
     reviewer must approve; policy rejects restricted content and confidence
-    below 0.70 before any reviewer sees it. `evidence_ref` must point at an
-    immutable record (`trace://`, `s3://`, `log://`) — a local transcript path
-    is not acceptable evidence because it can be edited after the fact.
+    below 0.70 before any reviewer sees it.
+
+    Propose only what a *different* project member would need and could act on
+    without this conversation for context. Worth proposing: a metric-definition
+    trap, a constraint the data imposes, a confirmed root cause, a procedure that
+    proved correct. Not worth proposing: your own formatting or tooling
+    preferences (those belong in personal memory, written automatically), details
+    specific to one task, restated documentation, and anything you have not
+    verified — an unverified guess that reaches shared memory misleads everyone
+    who retrieves it later.
+
+    `category` selects the kind of knowledge, and reviewers filter on it:
+      fact           an observation about the system or data that holds
+                     independently of any one task
+      decision       a choice the team made, plus what it rules out
+      constraint     a hard limit or definitional trap that will silently
+                     produce wrong answers if violated
+      incident       something that went wrong, confirmed, with its cause
+      procedure_hint a reusable operational step worth repeating
+
+    `confidence` is your own assessment, and below 0.70 the candidate is dropped
+    before review — so do not inflate it to force a submission through, and do not
+    propose at all if you are guessing.
+
+    `privacy_classification` must be `restricted` if the statement contains
+    customer-identifying detail, credentials, or anything covered by an NDA. That
+    stops it before a reviewer sees it, which is the intended outcome: shared
+    memory is readable by every project member.
+
+    `evidence_ref` must point at an immutable record (`trace://`, `s3://`,
+    `log://`) — a local transcript path is not acceptable evidence because it can
+    be edited after the fact. Call `memory_capture_evidence` first to turn a
+    conversation excerpt into a version-pinned `s3://` reference.
     """
     statement = statement.strip()
     if not MIN_STATEMENT <= len(statement) <= MAX_STATEMENT:

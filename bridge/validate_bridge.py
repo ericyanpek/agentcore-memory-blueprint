@@ -28,6 +28,9 @@ USERS = {
     "alice": "memory-desktop-alice@example.com",
     "bob": "memory-desktop-bob@example.com",
 }
+# Mirrors server.CATEGORIES. Duplicated rather than imported so this validator
+# stays a standalone client that drives the bridge over the real MCP protocol.
+CATEGORIES = ("fact", "decision", "constraint", "incident", "procedure_hint")
 
 
 class Bridge:
@@ -83,6 +86,11 @@ class Bridge:
 
     def tools(self) -> list[str]:
         return [tool["name"] for tool in self._request("tools/list", {})["tools"]]
+
+    def tool_specs(self) -> dict[str, dict[str, Any]]:
+        return {
+            tool["name"]: tool for tool in self._request("tools/list", {})["tools"]
+        }
 
     def call(self, name: str, **arguments: Any) -> Any:
         result = self._request(
@@ -328,6 +336,21 @@ def main() -> int:
             "no tool named *write_shared*",
             f"tools={exposed}",
             not writes_shared and "memory_propose_shared" in exposed,
+        )
+
+        # The category enum is only useful to a model if its meaning travels with
+        # the tool. Asserting the names appear is not enough: a bare tuple of five
+        # words is what the model already had, and it could not choose between them.
+        propose_spec = alice.tool_specs().get("memory_propose_shared", {})
+        described = propose_spec.get("description", "")
+        documented = [name for name in CATEGORIES if f"{name} " in described]
+        states_exclusions = "Not worth proposing" in described
+        record(
+            "Proposal tool conveys the category semantics, not just their names",
+            "every category defined in the description, plus what not to propose",
+            f"defined={len(documented)}/{len(CATEGORIES)} "
+            f"exclusions_stated={states_exclusions}",
+            len(documented) == len(CATEGORIES) and states_exclusions,
         )
 
         before = alice.call("memory_whoami")

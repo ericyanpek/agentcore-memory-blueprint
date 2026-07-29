@@ -172,13 +172,11 @@ values, confidence, privacy classification, `promotion_hint`, and an immutable
 model when to propose or what is worth proposing.**
 
 `memory_propose_shared` is an ordinary MCP tool, so the model decides when to call it
-based solely on the tool's docstring. There is no hook in the repository (nothing
-evaluates a completed turn), the single Skill under `skills/` is unrelated to proposal
-judgment, and `poc/runtime_agent.py`'s system prompt never mentions proposing. The five
-`category` **names** are visible to the model through validation errors
-(`CATEGORIES` in `bridge/server.py`), but their **meaning is never conveyed** — the
-model cannot tell what counts as a `constraint` versus an `incident`, and is never told
-that personal preferences and one-off task details should not be proposed.
+based solely on the tool's description. The judgment criteria are now in that
+description (change 1 below), but **the trigger still has no mechanism**: no hook
+evaluates a completed turn for anything worth proposing, and the single Skill under
+`skills/` is unrelated to proposal judgment. Proposing therefore still depends on the
+user asking, or on the model noticing unprompted.
 
 This is a usability gap rather than a security one, but its reach is larger: **if
 nobody proposes, the whole governance mechanism idles** — the review queue stays empty
@@ -187,14 +185,20 @@ produced by a script calling the API directly, not proposed by an agent.
 
 **Target behaviour, two independent changes.**
 
-1. **Convey the judgment criteria to the model.** The five enum values already imply
-   the criteria; write their semantics into the tool description or a dedicated Skill:
-   `fact` and `decision` must be independently understandable and useful to others;
-   `constraint` covers hard limits such as metric-definition traps; `incident` covers
-   confirmed failures that actually occurred; `procedure_hint` covers reusable
-   operational steps. State equally clearly what should **not** be proposed: personal
-   preferences, one-off task details, unverified guesses. This is the cheapest step.
-2. **Capture evidence automatically with a hook.** Today the model must call
+1. **Convey the judgment criteria to the model — done.** The
+   `memory_propose_shared` docstring now defines each `category` (`fact` is an
+   observation that holds independently of any one task; `decision` includes what it
+   rules out; `constraint` is a definitional trap that silently produces wrong answers
+   when violated; `incident` is a confirmed failure with its cause; `procedure_hint` is
+   a reusable operational step), and states explicitly what should **not** be proposed:
+   the model's own formatting or tooling preferences, details specific to one task,
+   restated documentation, and unverified guesses. It also says confidence must not be
+   inflated to force a submission through, when `restricted` is required, and to call
+   `memory_capture_evidence` first for a version-pinned reference.
+   `bridge/validate_bridge.py` gained an assertion that the **semantics** — not merely
+   the names — appear in the description returned by `tools/list`, so the change cannot
+   silently regress.
+2. **Capture evidence automatically with a hook — not done.** The model must still call
    `memory_capture_evidence` for an `s3://` reference before calling
    `memory_propose_shared`; skipping the first step means the proposal is rejected on
    evidence validation — safe but poor ergonomics (already recorded in
@@ -202,12 +206,16 @@ produced by a script calling the API directly, not proposed by an agent.
    at the end of each turn keeps evidence always ready, leaving the model only the
    judgment of whether a statement is worth proposing.
 
-The division of labour: change 2 removes the prerequisite burden, change 1 addresses
-the judgment itself.
+The division of labour: change 1 addresses the judgment itself (done), change 2 removes
+the prerequisite burden (outstanding).
 
-**Files.** `bridge/server.py` (the `memory_propose_shared` docstring), `skills/` (a new
-proposal-judgment Skill), `poc/runtime_agent.py` (system prompt), `.mcp.json` and hook
-configuration (automatic evidence capture).
+**Remaining files.** `.mcp.json` and hook configuration (automatic evidence capture);
+optionally `skills/`, to give the same criteria to runtimes that do not read MCP tool
+descriptions.
+
+> `poc/runtime_agent.py` is deliberately excluded: it has no proposal tool at all, and
+> its system prompt only governs consuming shared memory. The proposal capability exists
+> only in the desktop bridge.
 
 ---
 
