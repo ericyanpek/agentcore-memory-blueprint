@@ -23,10 +23,19 @@ Four design judgments; reasoning and counter-evidence in
   reviewer approved, with no second extraction model rewriting it — what the reviewer
   read is byte-identical to what is stored. Personal preferences work the opposite way:
   `CreateEvent` plus AgentCore strategy extraction, where the wording is model-authored.
-- **Knowledge layers are divided by authority**, not by cognitive-science vocabulary.
-  Authority derives who may write and what overrides what.
-- **Retrieval precedence is absolute.** Live data > Skills > authoritative documents >
-  reviewed team memory > personal preference. Memory never overrides current data.
+- **Six knowledge layers, divided by who is entitled to change them** rather than by
+  memory type: logs (observational), short-term memory (raw interaction), personal
+  long-term memory (extracted), shared long-term memory (reviewed), Knowledge Base
+  (document owner), Skills (Git review). Each layer has a definite writer and a
+  definite answer to whether the agent may retrieve it directly — so "may memory
+  override a document" has one answer, which an `episodic`/`semantic` taxonomy cannot
+  provide.
+- **Retrieval precedence is absolute, and travels with the context.** Live data >
+  Skills > authoritative documents > reviewed team memory > personal preference, with
+  preferences affecting presentation only. This replaces "which memories are relevant"
+  with "which authority wins" — the second question has a definite answer, the first
+  does not — and it is the only constraint stopping stale memory from overriding
+  current data.
 - **Human review is the only entrance to shared writes.** Agents and desktop clients
   hold no shared-write permission at the IAM layer; team knowledge can only be proposed.
 
