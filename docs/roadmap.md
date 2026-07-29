@@ -5,8 +5,9 @@
 > [architecture.md](architecture.md)
 
 Items are ordered by whether they close a gap between what the documentation claims
-and what the code enforces (items 1–2), extend the governance model into a dimension
-it does not yet cover (items 3–5), or harden the validation methodology (item 6).
+and what the code enforces (items 1–2), extend the governance model into a dimension it
+does not yet cover or make it actually get used (items 3–6), or harden the validation
+methodology (item 7).
 
 Each item states the current behaviour, the target behaviour, and the affected files.
 Severity uses the same scale as the production-gap tables in
@@ -163,7 +164,54 @@ condition), `dashboard/` (surface superseded records distinctly).
 
 ---
 
-## 5. Freshness signalling and context budget — severity: medium
+## 5. When to propose, and what qualifies — severity: high
+
+**Current behaviour.** The proposal contract itself is complete: five `category`
+values, confidence, privacy classification, `promotion_hint`, and an immutable
+`evidence_ref` are all enforced in `src/blueprint/domain.py`. But **nothing tells the
+model when to propose or what is worth proposing.**
+
+`memory_propose_shared` is an ordinary MCP tool, so the model decides when to call it
+based solely on the tool's docstring. There is no hook in the repository (nothing
+evaluates a completed turn), the single Skill under `skills/` is unrelated to proposal
+judgment, and `poc/runtime_agent.py`'s system prompt never mentions proposing. The five
+`category` **names** are visible to the model through validation errors
+(`CATEGORIES` in `bridge/server.py`), but their **meaning is never conveyed** — the
+model cannot tell what counts as a `constraint` versus an `incident`, and is never told
+that personal preferences and one-off task details should not be proposed.
+
+This is a usability gap rather than a security one, but its reach is larger: **if
+nobody proposes, the whole governance mechanism idles** — the review queue stays empty
+and shared memory never accumulates. The candidates in the experiment report were
+produced by a script calling the API directly, not proposed by an agent.
+
+**Target behaviour, two independent changes.**
+
+1. **Convey the judgment criteria to the model.** The five enum values already imply
+   the criteria; write their semantics into the tool description or a dedicated Skill:
+   `fact` and `decision` must be independently understandable and useful to others;
+   `constraint` covers hard limits such as metric-definition traps; `incident` covers
+   confirmed failures that actually occurred; `procedure_hint` covers reusable
+   operational steps. State equally clearly what should **not** be proposed: personal
+   preferences, one-off task details, unverified guesses. This is the cheapest step.
+2. **Capture evidence automatically with a hook.** Today the model must call
+   `memory_capture_evidence` for an `s3://` reference before calling
+   `memory_propose_shared`; skipping the first step means the proposal is rejected on
+   evidence validation — safe but poor ergonomics (already recorded in
+   [桌面客户端集成设计](桌面客户端集成设计.md) section 11). A hook that captures evidence
+   at the end of each turn keeps evidence always ready, leaving the model only the
+   judgment of whether a statement is worth proposing.
+
+The division of labour: change 2 removes the prerequisite burden, change 1 addresses
+the judgment itself.
+
+**Files.** `bridge/server.py` (the `memory_propose_shared` docstring), `skills/` (a new
+proposal-judgment Skill), `poc/runtime_agent.py` (system prompt), `.mcp.json` and hook
+configuration (automatic evidence capture).
+
+---
+
+## 6. Freshness signalling and context budget — severity: medium
 
 **Current behaviour.** `src/agent/context_builder.py` requests a fixed `topK` and
 injects what returns. Record age is available — `RetrieveMemoryRecords` returns
@@ -188,7 +236,7 @@ review triggers, not in silent removal of audited records.
 
 ---
 
-## 6. Close the remaining vacuous assertions — severity: medium
+## 7. Close the remaining vacuous assertions — severity: medium
 
 Both reports document a methodological lesson: security assertions must verify that
 what should be blocked is blocked *and* that what should exist exists, and must check

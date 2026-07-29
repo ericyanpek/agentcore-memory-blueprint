@@ -37,7 +37,7 @@ backbone model, a single benchmark, a fixed retrieval budget, prompt-based
 reimplementations rather than fully learned memory systems, and LLM judges for
 correctness. It explicitly notes that raw chunking's advantage **may diminish under
 tighter context budgets** where compression becomes necessary — which is the same
-budget dependence recorded in section 2 and in [roadmap.md](roadmap.md) item 5.
+budget dependence recorded in section 2 and in [roadmap.md](roadmap.md) item 6.
 
 **Market evidence in the same direction.** mem0's 2026 algorithm revision removed
 `UPDATE` and `DELETE` from its write path in favour of a single-pass append,
@@ -82,7 +82,7 @@ bound *volume*. `src/agent/context_builder.py` has no context budget. Retention
 versus consolidation is budget-dependent with a measured crossover — retention
 performs well under loose budgets and degrades sharply under tight ones
 ([arXiv:2607.17545](https://arxiv.org/html/2607.17545v1)). See
-[roadmap.md](roadmap.md) item 3.
+[roadmap.md](roadmap.md) item 6.
 
 ## 3. Human review as an anti-poisoning control
 
@@ -134,8 +134,8 @@ to be correct everywhere.
 **What this does not buy.** Resource separation protects the shared tier. It does
 not isolate users from each other inside the personal resource. That requires the
 per-actor IAM conditions demonstrated in `poc/validate_identity_pool.py`, which the
-Runtime role does not currently carry. See `docs/architecture.md` and
-[roadmap.md](roadmap.md) item 2.
+Runtime role does not currently carry. See `docs/architecture.md` and the scope
+limitations in the README; no roadmap item covers it yet.
 
 ## 5. On evaluating memory quality
 

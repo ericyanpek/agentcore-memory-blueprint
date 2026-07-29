@@ -38,6 +38,14 @@ Four design judgments; reasoning and counter-evidence in
   current data.
 - **Human review is the only entrance to shared writes.** Agents and desktop clients
   hold no shared-write permission at the IAM layer; team knowledge can only be proposed.
+- **A proposal is a structured contract, not free text.** Every candidate must carry an
+  independently understandable statement, one of five `category` values
+  (`fact`/`decision`/`constraint`/`incident`/`procedure_hint`), an `evidence_ref`
+  pointing at an immutable record (`trace://`/`s3://`/`log://` — a local transcript is
+  editable and therefore not evidence), a confidence, and a privacy classification.
+  Attribution cannot be forged: `proposer_actor_id` is derived server-side from the
+  token's `sub` and any value in the body is ignored. The contract turns "what counts as
+  team knowledge" into a checkable shape rather than a convention.
 
 > Review covers the **team tier only**. Personal long-term memory and short-term events
 > are not reviewed — IAM bounds their blast radius, but isolation is not review.
@@ -147,6 +155,11 @@ This is a POC. The boundaries below are deliberate:
   most significant open item.
 - **The policy gate reads declared labels**, not content; it does not inspect for
   credentials or personal data.
+- **The proposal contract's shape is enforced; its semantics are not yet conveyed to the
+  model.** The five `category` names are visible to the model, but what counts as a
+  `constraint` — and what should not be proposed at all — appears in no tool description,
+  Skill, or system prompt, and no hook evaluates a completed turn. Proposing therefore
+  depends on the user asking for it; with no proposals, the governance path idles.
 - **Approved facts have no supersession path**; a statement that becomes false stays
   retrievable until the resource expiry.
 - **Governance properties are validated; answer quality is not measured.**
