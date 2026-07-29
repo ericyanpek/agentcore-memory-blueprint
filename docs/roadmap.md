@@ -118,12 +118,16 @@ identically until the moment it disappears.
 - Memory record streaming publishes create, update, and delete events to Kinesis,
   including deletions caused by consolidation de-duplication and superseding.
 
-**Design constraint that shapes the solution.** Retrieval metadata filters support
-only `EQUALS_TO`, `EXISTS`, and `NOT_EXISTS` (verified against the
-`bedrock-agentcore` service model, API version 2024-02-28). There are no range
-operators, so a validity window cannot be expressed as a filter over timestamps.
-Supersession must therefore be modelled as a **discrete status flag**, not as a date
-comparison:
+**Filtering capability available.** Metadata filters support ten operators:
+`EQUALS_TO`, `EXISTS`, `NOT_EXISTS`, `BEFORE`, `AFTER`, `CONTAINS`, `GREATER_THAN`,
+`GREATER_THAN_OR_EQUALS`, `LESS_THAN`, `LESS_THAN_OR_EQUALS` (botocore 1.43.58 service
+model). **Mind the SDK version**: releases older than the `boto3>=1.43.36` pinned in this
+repo's `src/requirements.txt` expose only the first three, so range filters written
+against an older SDK are rejected by local validation.
+
+Because `BEFORE`/`AFTER` exist, a validity window **can** be expressed as a timestamp
+filter. The blueprint still models supersession as a **discrete status flag**, for audit
+reasons rather than capability ones:
 
 - Add `superseded_by` and set `review_status` to a terminal value such as
   `superseded` on the old record via `BatchUpdateMemoryRecords`.
@@ -150,11 +154,26 @@ embedded in a question
 human decision point with an audit trail; extending it costs one field and one
 workflow branch, and avoids adding an unreliable adjudicator.
 
-For comparison, the reference design for full temporal modelling is Graphiti's
+For comparison, the reference design for full temporal modelling is Zep/Graphiti's
 bi-temporal edge model, which separates when a fact was true from when the system
 learned it, and invalidates rather than deletes
-([arXiv:2501.13956](https://arxiv.org/abs/2501.13956)). A status flag is the
-subset of that model expressible under `EQUALS_TO`-only filtering.
+([arXiv:2501.13956](https://arxiv.org/abs/2501.13956)). Zep's current product docs
+document Fact Invalidation directly: when new data invalidates a prior fact, the time it
+became invalid is stored on that fact's edge. **AgentCore has no equivalent**, which is
+why this project must implement supersession itself.
+
+One factual discrepancy worth stating plainly: an AWS machine-learning blog says
+consolidation "marks the outdated memories as INVALID instead of instantly deleting
+them," maintaining an immutable audit trail. But the API reference's `MemoryRecord`
+carries only `content`, `createdAt`, `memoryRecordId`, `memoryStrategyId`, `namespaces`,
+and `metadata` — **no status or validity field** — and memory record streaming defines
+exactly three event types (`MemoryRecordCreated`/`MemoryRecordUpdated`/
+`MemoryRecordDeleted`), with consolidation superseding documented under **deletion**.
+AWS's own blog and API documentation therefore disagree. This blueprint follows the API
+documentation: it **relies on no platform-side INVALID semantics**, and keeps the audit
+trail in the candidate table and via Kinesis streaming. (`MemoryRecordOutput` does carry
+a `MemoryRecordStatus`, but that is a batch-write result of SUCCEEDED/FAILED, not a
+record lifecycle state, and must not be cited as invalidation.)
 
 **Files.** `contracts/memory-candidate-proposed.json`, `src/blueprint/domain.py`,
 `src/blueprint/memory.py` (an update path alongside the publish path),

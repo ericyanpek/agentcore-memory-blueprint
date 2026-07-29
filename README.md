@@ -36,6 +36,31 @@
 > 审核只覆盖**团队层**。个人长期记忆与短期事件无审核环节 —— IAM 限制其爆炸半径，
 > 但隔离不等于审核。
 
+## 与业内产品的关系
+
+完整横评（含一手来源与未核实项）见**[记忆产品横评](docs/记忆产品横评.md)**。
+
+**AgentCore 不如竞品的地方，如实说**：检索只有语义，没有 BM25、hybrid 或重排，embedding
+模型也不暴露 —— 而因子实验显示检索方法是拉动准确率的主要变量（20 个点 vs 写入策略
+3–8 个点）。失效语义同样缺失：AWS 博客称 consolidation 会把过时记忆标为 `INVALID`，但
+API 里的记忆记录没有任何状态字段，流式事件只有增/改/删 —— **AWS 自己的博客与 API 文档
+不一致，本蓝图按 API 文档行事，不依赖该行为**。Zep 的 Fact Invalidation 是这一项上明确
+领先的实现。
+
+**AgentCore 的优势也很实在**：隔离由 `bedrock-agentcore:actorId`/`namespace` 等 IAM
+条件键在平台侧强制，而 mem0、Zep、Letta、Databricks、Vertex、Foundry 的 scope 都是应用层
+参数或数据库列 —— 写对了隔离，写错了泄露。Databricks 文档把这条限制说得最诚实：
+"never let the model set it. The app service principal can read every scope."
+此外元数据过滤是**预过滤**（在向量检索前缩小候选集）、10 个操作符、
+`STRICTLY_CONSISTENT` 元数据可由应用直接设定不经 LLM 推断，以及 count-based 计费。
+
+**放大效应在于三处相互增强**：治理条件因预过滤而进入检索路径本身 —— 未批准与被取代的
+记录不参与相似度竞争，而非事后筛除；逐字入库使 AgentCore 的抽取质量在共享层完全不构成
+风险；取代机制用离散状态标志实现，绕开平台空白，且不引入业内公认最不可靠的 LLM 矛盾裁决。
+
+**务实结论**：需要多用户隔离与团队知识问责，选这套；检索质量优先或需关键词精确匹配，
+选 mem0/Zep。四层分层允许两者并存 —— 个人层可换后端，共享层保留 IAM + 审核。
+
 ## 架构
 
 ```mermaid
@@ -80,6 +105,7 @@ flowchart LR
 | [桌面客户端集成设计](docs/桌面客户端集成设计.md) | — | 桌面端身份方案与 8 + 17 项实测 |
 | [架构设计](docs/架构设计.md) | [architecture](docs/architecture.md) | 信任边界、检索优先级、信息生命周期 |
 | [设计取舍依据](docs/设计取舍依据.md) | [design-rationale](docs/design-rationale.md) | 核心特点的取舍理由与外部证据 |
+| [记忆产品横评](docs/记忆产品横评.md) | [memory-landscape](docs/memory-landscape.md) | AgentCore 与 mem0/Zep/Letta 等的能力对照与放大效应 |
 | [下一步演进](docs/下一步演进.md) | [roadmap](docs/roadmap.md) | 按优先级排列的演进项，含取代语义 |
 | [演示手册](docs/演示手册.md) | [demo-runbook](docs/demo-runbook.md) | 端到端演示流程 |
 | [评估记录](docs/评估记录.md) | [sample-review](docs/sample-review.md) | 官方示例的吸收结论与推迟项 |

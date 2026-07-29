@@ -50,6 +50,41 @@ Four design judgments; reasoning and counter-evidence in
 > Review covers the **team tier only**. Personal long-term memory and short-term events
 > are not reviewed — IAM bounds their blast radius, but isolation is not review.
 
+## Against the Field
+
+Full comparison, with primary sources and unverified items, in
+**[memory-landscape](docs/memory-landscape.md)**.
+
+**Where AgentCore is behind, stated plainly**: retrieval is semantic only — no BM25, no
+hybrid, no reranking, and no choice of embedding model — while the factorial study shows
+retrieval method is the dominant variable in accuracy (20 points against 3–8 for write
+strategy). Invalidation is likewise absent: an AWS blog says consolidation marks outdated
+memories `INVALID`, but the API's memory record has no status field and streaming defines
+only create/update/delete — **AWS's own blog and API documentation disagree, and this
+blueprint follows the API documentation rather than depending on the behaviour**. Zep's
+Fact Invalidation is the clear leader on this axis.
+
+**AgentCore's advantages are equally real**: isolation is enforced platform-side through
+IAM condition keys such as `bedrock-agentcore:actorId` and `namespace`, whereas scope in
+mem0, Zep, Letta, Databricks, Vertex, and Foundry is an application parameter or a
+database column — correct code isolates, incorrect code leaks. Databricks documents the
+limitation most honestly: "never let the model set it. The app service principal can read
+every scope." Add **pre-filtering** metadata (filters applied before the vector search
+narrows the candidate set), ten filter operators, `STRICTLY_CONSISTENT` metadata the
+application sets without LLM inference, and count-based pricing.
+
+**The amplification is three mutual reinforcements**: pre-filtering puts governance
+conditions inside the retrieval path, so unapproved and superseded records never enter the
+similarity contest rather than being discarded after scoring; verbatim publication makes
+AgentCore's extraction quality irrelevant to the shared tier; and supersession via a
+discrete status flag routes around the platform gap without adding the LLM contradiction
+adjudicator that the field has shown to be its least reliable component.
+
+**Practical guidance**: choose this for multi-user isolation and accountable team
+knowledge; choose mem0 or Zep for retrieval quality or exact keyword matching. The four
+layers allow both — the personal tier can change backends while the shared tier keeps IAM
+plus review.
+
 ## Architecture
 
 ```mermaid
@@ -97,6 +132,7 @@ Chinese is the primary language for documentation; English translations are kept
 | [桌面客户端集成设计](docs/桌面客户端集成设计.md) | — | Desktop identity design, 8 + 17 checks |
 | [架构设计](docs/架构设计.md) | [architecture](docs/architecture.md) | Trust boundaries, retrieval precedence, information lifecycle |
 | [设计取舍依据](docs/设计取舍依据.md) | [design-rationale](docs/design-rationale.md) | Reasoning behind the distinctive choices, with external evidence |
+| [记忆产品横评](docs/记忆产品横评.md) | [memory-landscape](docs/memory-landscape.md) | AgentCore against mem0/Zep/Letta and the amplification effect |
 | [下一步演进](docs/下一步演进.md) | [roadmap](docs/roadmap.md) | Prioritized next evolution, including supersession |
 | [演示手册](docs/演示手册.md) | [demo-runbook](docs/demo-runbook.md) | End-to-end demonstration |
 | [评估记录](docs/评估记录.md) | [sample-review](docs/sample-review.md) | Findings adopted from official samples, and deferred items |
