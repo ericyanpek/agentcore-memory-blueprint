@@ -9,8 +9,8 @@ valuable experience becomes team knowledge only after human review. An AWS refer
 implementation on Amazon Bedrock AgentCore Memory.
 
 **Start with the results**: [experiment report](docs/实验报告.md) (a real run, 14
-checks) · [desktop integration design](docs/桌面客户端集成设计.md) (how Claude Code and
-Codex share one cloud memory)
+checks) · [desktop integration design](docs/desktop-client-integration.md) (how Claude
+Code and Codex share one cloud memory)
 
 ## What Is Distinctive
 
@@ -88,7 +88,7 @@ plus review.
 ## What AWS Documents
 
 Verbatim quotes, implementation line references, and measured evidence per claim:
-**[AWS 官方背书](docs/AWS官方背书.md)** (Chinese).
+**[aws-alignment.md](docs/aws-alignment.md)**.
 
 A Well-Architected Lens is a **post-hoc codification of field practice, not a
 precondition for it** — patterns reach a Lens after solution architects hit the same
@@ -186,9 +186,10 @@ Chinese is the primary language for documentation; English translations are kept
 | Chinese (primary) | English | Content |
 |---|---|---|
 | [实验报告](docs/实验报告.md) | [scenario-test-report](docs/scenario-test-report.md) | Validated run and 14 check results |
-| [桌面客户端集成设计](docs/桌面客户端集成设计.md) | — | Desktop identity design, 8 + 17 checks |
+| [桌面客户端集成设计](docs/桌面客户端集成设计.md) | [desktop-client-integration](docs/desktop-client-integration.md) | Desktop identity design, 8 + 17 checks |
 | [架构设计](docs/架构设计.md) | [architecture](docs/architecture.md) | Trust boundaries, retrieval precedence, information lifecycle |
 | [设计取舍依据](docs/设计取舍依据.md) | [design-rationale](docs/design-rationale.md) | Reasoning behind the distinctive choices, with external evidence |
+| [AWS 官方背书](docs/AWS官方背书.md) | [aws-alignment](docs/aws-alignment.md) | Each claim mapped to AWS documentation, with implementation locations and measured evidence |
 | [记忆产品横评](docs/记忆产品横评.md) | [memory-landscape](docs/memory-landscape.md) | AgentCore against mem0/Zep/Letta and the amplification effect |
 | [下一步演进](docs/下一步演进.md) | [roadmap](docs/roadmap.md) | Prioritized next evolution, including supersession |
 | [演示手册](docs/演示手册.md) | [demo-runbook](docs/demo-runbook.md) | End-to-end demonstration |

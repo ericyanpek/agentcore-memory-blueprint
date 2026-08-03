@@ -76,8 +76,11 @@ https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html
        HTTP 200, 3 pending, task_token exposed=False
 [PASS] Review API rejects unauthenticated access          → HTTP 401
 [PASS] A consumed review token cannot be replayed         → HTTP 409
-[PASS] Non-reviewer is refused the review queue           → 明确 403，而非静默过滤
+[PASS] Non-reviewer is refused the review queue
+       ok=False detail=You are not in the project reviewer group, so you cannot read the review queue.
 ```
+
+拒绝是明示的，而非静默过滤 —— 非审核员被告知缺少组成员身份，不会收到一个空队列。
 
 `task_token exposed=False` 正是 AWS 那句"审核员不直接调 Step Functions API"的可验证形式。
 
