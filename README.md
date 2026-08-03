@@ -61,6 +61,57 @@ API 里的记忆记录没有任何状态字段，流式事件只有增/改/删 �
 **务实结论**：需要多用户隔离与团队知识问责，选这套；检索质量优先或需关键词精确匹配，
 选 mem0/Zep。四层分层允许两者并存 —— 个人层可换后端，共享层保留 IAM + 审核。
 
+## AWS 官方依据
+
+逐条原文、实现位置（精确到行）与实测证据见**[AWS 官方背书](docs/AWS官方背书.md)**。
+
+Well-Architected Lens 是**现场实践的后验编纂，不是实践的前置许可** —— 它的形成路径是
+解决方案架构师反复遇到同类问题、沉淀出模式、验证后才成文。所以下面不是「AWS 定规范、
+本项目照做」，而是三种不同的关系：
+
+**一、AWS 已编纂，本项目是可运行的参考实现**
+
+[AGENTSEC04-BP02 Human-in-the-loop for critical decisions](https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentsec04-bp02.html)
+（未建立此实践的风险等级：**High**）几乎是本审批链路的规格说明书：
+
+| 本实现 | AWS 官方原文 |
+|---|---|
+| `memory-governance-stack.ts:470` 用 `WAIT_FOR_TASK_TOKEN` | "AWS Step Functions **.waitForTaskToken callback pattern introduces an approval step**" |
+| `reviewer_api.py:66,87` 返回前 `pop` 掉 token | "**Reviewers don't typically call Step Functions APIs directly. The approval app holds the credentials**" |
+| `domain.py:101-105` 纯布尔闸门，无模型参与 | "**Risk classification itself can't rely on an LLM** exposed to the same untrusted content... Use **deterministic logic**" |
+| `evidence_ref` 指向不可变 S3 对象版本 | "**Store the full decision context in durable storage such as Amazon S3**" |
+| 记录 `reviewer_id` 与决策时间 | "**log human approval decisions with timestamps and reviewer identities**" |
+
+隔离机制同样有官方出处：[Service Authorization Reference](https://docs.aws.amazon.com/service-authorization/latest/reference/list_bedrock-agentcore.html)
+确认 `bedrock-agentcore:actorId`、`namespace`、`sessionId` 为 IAM 条件键；
+[GenAI 安全参考架构](https://docs.aws.amazon.com/prescriptive-guidance/latest/security-reference-architecture-generative-ai/gen-auto-agents.html)
+要求 "**Prevent memory poisoning by ensuring that users can't modify their session ID or
+actor ID**" —— 这正是 bridge 不暴露任何 `actor_id` 参数的原因。
+
+**二、AWS 指出方向，但平台不提供原语**
+
+[AGENTSEC01 Secure agent memory and state](https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentsec01.html)
+的五级成熟度模型把 "**Memory governance is codified and auditable**" 列为 Level 5 目标，
+并要求 "Every write path into memory... passes through a layered validation pipeline
+before data reaches the store"。但 AgentCore Memory **没有记忆写入的审核闸门**，
+Step Functions 集成表里 AgentCore 的 `.waitForTaskToken` 也是 Not supported —— 这一层
+必须自建。本项目就是这段空白的实现。
+
+按该模型自评的结果暴露一个**错位**：已达 Level 5 的治理可审计，却缺 Level 3 的
+Guardrails 与 PII 过滤、Level 4 的 HMAC 逐读校验。即**治理维度很深，内容安全与运行时
+完整性维度仍浅**（详见[下一步演进](docs/下一步演进.md)第 9 项）。
+
+**三、AWS 尚未覆盖，属本项目的工程判断**
+
+共享记忆的准入治理（AWS 讲共享命名空间，不讲"什么有资格进入"）、六级检索优先级全序、
+`evidence_ref` 固定 `versionId` 作为记忆溯源、Identity Pool session tag 与单一共享角色
+的组合 —— 这四项无官方来源，不应声称有背书。
+
+> 引用纪律上的两点：`INVALID` 状态只见于 AWS 博客，**开发者指南与 API 文档中查不到**
+> （详见上文"与业内产品的关系"及[记忆产品横评](docs/记忆产品横评.md)）—— 官方来源之间
+> 存在不一致时，本蓝图按 API 文档行事。另有二手来源提到 `strategyId` 条件键，在官方
+> Service Authorization Reference 页面未能确认，故不引用。
+
 ## 架构
 
 ```mermaid

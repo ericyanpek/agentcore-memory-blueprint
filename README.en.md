@@ -85,6 +85,63 @@ knowledge; choose mem0 or Zep for retrieval quality or exact keyword matching. T
 layers allow both — the personal tier can change backends while the shared tier keeps IAM
 plus review.
 
+## What AWS Documents
+
+Verbatim quotes, implementation line references, and measured evidence per claim:
+**[AWS 官方背书](docs/AWS官方背书.md)** (Chinese).
+
+A Well-Architected Lens is a **post-hoc codification of field practice, not a
+precondition for it** — patterns reach a Lens after solution architects hit the same
+problem repeatedly. So this is not "AWS specified it, we complied." Three distinct
+relationships:
+
+**1. Codified by AWS — this repo is a runnable reference**
+
+[AGENTSEC04-BP02 Human-in-the-loop for critical decisions](https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentsec04-bp02.html)
+(risk if not established: **High**) reads almost as a specification for this review
+pipeline:
+
+| This implementation | AWS verbatim |
+|---|---|
+| `memory-governance-stack.ts:470` uses `WAIT_FOR_TASK_TOKEN` | "AWS Step Functions **.waitForTaskToken callback pattern introduces an approval step**" |
+| `reviewer_api.py:66,87` pops the token before responding | "**Reviewers don't typically call Step Functions APIs directly. The approval app holds the credentials**" |
+| `domain.py:101-105` is a pure boolean gate, no model | "**Risk classification itself can't rely on an LLM** exposed to the same untrusted content... Use **deterministic logic**" |
+| `evidence_ref` pins an immutable S3 object version | "**Store the full decision context in durable storage such as Amazon S3**" |
+| `reviewer_id` and decision timestamp are recorded | "**log human approval decisions with timestamps and reviewer identities**" |
+
+Isolation has official grounding too: the
+[Service Authorization Reference](https://docs.aws.amazon.com/service-authorization/latest/reference/list_bedrock-agentcore.html)
+confirms `bedrock-agentcore:actorId`, `namespace`, and `sessionId` as IAM condition keys,
+and the [GenAI security reference architecture](https://docs.aws.amazon.com/prescriptive-guidance/latest/security-reference-architecture-generative-ai/gen-auto-agents.html)
+requires "**Prevent memory poisoning by ensuring that users can't modify their session ID
+or actor ID**" — which is why no bridge tool accepts an `actor_id` parameter.
+
+**2. AWS points at it but ships no primitive**
+
+[AGENTSEC01 Secure agent memory and state](https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentsec01.html)
+makes "**Memory governance is codified and auditable**" its Level 5 maturity goal. But
+AgentCore Memory has **no approval gate on memory writes**, and the Step Functions
+integration table lists `.waitForTaskToken` as Not supported for AgentCore — so this
+layer must be built. That gap is what this repo implements.
+
+Scoring against that model exposes an **inversion**: Level 5 governance sits on top of
+missing Level 3 Guardrails and PII filtering, and missing Level 4 per-read integrity
+verification. Governance runs deep; content safety and runtime integrity remain shallow
+(see [roadmap](docs/roadmap.md) item 9).
+
+**3. AWS is silent — these are engineering judgements**
+
+Admission control for shared memory (AWS documents shared namespaces, not what qualifies
+to enter one), the six-level retrieval precedence order, `versionId`-pinned evidence
+provenance, and the Identity Pool session tag plus single shared role combination. No
+official source backs these four; they should not be presented as endorsed.
+
+> Two notes on citation discipline: the `INVALID` status appears only in an AWS blog and
+> **not in the developer guide or API reference** (see "Against the Field" above) — where
+> official sources disagree, this blueprint follows the API documentation. A `strategyId`
+> condition key appears in secondary sources but could not be confirmed on the official
+> Service Authorization Reference page, so it is not cited.
+
 ## Architecture
 
 ```mermaid

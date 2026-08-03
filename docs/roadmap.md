@@ -2,12 +2,14 @@
 
 > Translation. The primary document is [下一步演进](下一步演进.md) (Chinese).
 > Related: [design-rationale.md](design-rationale.md) ·
-> [architecture.md](architecture.md)
+> [architecture.md](architecture.md) · [AWS 官方背书](AWS官方背书.md)
 
 Items are ordered by whether they close a gap between what the documentation claims
 and what the code enforces (items 1–2), extend the governance model into a dimension it
-does not yet cover or make it actually get used (items 3–6), or harden the validation
-methodology (item 7).
+does not yet cover or make it actually get used (items 3–6), harden the validation
+methodology (item 7), or come from the AWS Well-Architected Agentic AI Lens rather than
+from self-review (items 8–9, grouped separately because their basis is an external
+framework).
 
 Each item states the current behaviour, the target behaviour, and the affected files.
 Severity uses the same scale as the production-gap tables in
@@ -288,6 +290,76 @@ yet meet that standard.
   absence of `Resource: "*"` on any `bedrock-agentcore:` action, for KMS encryption
   on both DynamoDB tables, and for the `RETAIN` removal policies the deployment notes
   depend on.
+
+---
+
+## 8. Add a timeout escalation path for review — severity: high
+
+**Basis.** This item comes from the AWS Well-Architected Agentic AI Lens rather than from
+self-review. [AGENTSEC04-BP02](https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentsec04-bp02.html)
+names the absence directly as an anti-pattern:
+
+> "Implementing approval workflows **without timeout policies or escalation paths**, so
+> agent execution stalls indefinitely when reviewers are unavailable."
+
+And states the implementation requirement:
+
+> "In Step Functions, TimeoutSeconds or HeartbeatSeconds on the task state waiting for the
+> approval token triggers a timeout transition, and **Catch clauses route timed-out
+> executions to an escalation state** (notify secondary reviewers, escalate to management,
+> or **default to a safe fallback, typically blocking the operation**)."
+
+**Current behaviour.** `WaitForHumanReview` sets a 7-day `taskTimeout`
+(`infra/lib/memory-governance-stack.ts`) but has no `addCatch`. On timeout the execution
+fails with an uncaught error and the candidate **stays at `PENDING_REVIEW` forever** — no
+terminal status is written, so the review queue keeps showing it as pending while the
+workflow is dead. One execution was stranded this way during development, and it blocked
+CloudFormation cleanup.
+
+**Target behaviour.** Add `addCatch` for `States.Timeout` routing to a new `MarkTimedOut`
+terminal state that writes an explicit status (for example `REVIEW_TIMED_OUT`). The safe
+fallback is rejection, not admission — unapproved knowledge must not reach shared memory.
+The callback record should be settled at the same time so no `WAITING` row lingers.
+
+**Affected files.** `infra/lib/memory-governance-stack.ts` (`createReviewWorkflow`),
+`src/handlers/mark_status.py`, `infra/test/memory-governance-stack.test.ts`.
+
+---
+
+## 9. Score against the AGENTSEC01 maturity model and close the gaps — severity: medium
+
+**Basis.** [AGENTSEC01 Secure agent memory and state](https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentsec01.html)
+publishes a five-level maturity model, which serves as an external yardstick rather than a
+self-invented score.
+
+**Current standing.** Item by item, this blueprint sits **between Level 3 and Level 5**:
+
+| Level | Requirement | This blueprint |
+|---|---|---|
+| 3 | Hierarchical namespace schemas with per-actor and per-session placeholders | Present |
+| 3 | Multi-layer validation: schema checks plus Guardrails policy and PII filtering plus contextual grounding checks | **Schema and declared labels only**; no Guardrails, no PII filtering, no grounding checks |
+| 4 | KMS-backed HMAC integrity verification on every read | **Absent** |
+| 4 | All write paths share one validation pipeline, including tool outputs and inter-agent messages | Partial: the shared path has a gate, personal writes do not |
+| 4 | CloudWatch anomaly detection plus an EventBridge hallucination circuit breaker | **Absent** |
+| 5 | Routine red-team exercises simulating poisoning and propagation | **Absent** |
+| 5 | Memory governance is codified and auditable | Present — this is the core of the project |
+
+**The inversion worth naming.** Level 5 governance is in place while Level 3 Guardrails and
+Level 4 integrity verification are missing. Governance runs deep; content safety and
+runtime integrity remain shallow — the same finding as section 9 of
+[实验报告](实验报告.md) ("the policy gate reads declared labels, it does not inspect
+content"), now confirmed by an external yardstick.
+
+**Target behaviour.** In priority order: Guardrails and PII filtering first (Level 3, which
+also narrows the policy-gate scope in item 3), then red-teaming (Level 5, reusing the
+[MINJA](https://arxiv.org/abs/2503.03704) and
+[GhostWriter](https://arxiv.org/abs/2607.06595) techniques to measure poisoning
+resistance). Per-read HMAC verification (Level 4) is costly and should be evaluated only
+after the threat model is explicit.
+
+**Affected files.** `src/blueprint/domain.py` (gate),
+`infra/lib/memory-governance-stack.ts` (Guardrails integration), a new red-team validation
+script.
 
 ---
 
