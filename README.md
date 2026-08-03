@@ -170,10 +170,14 @@ flowchart LR
 ## 快速开始
 
 ```bash
+./scripts/install_hooks.sh
 python3 -m unittest discover -s tests -v
 ./poc/build_lambda_layer.sh
 cd infra && nvm use && npm install && npm run build && npm test && npx cdk synth
 ```
+
+`install_hooks.sh` 装一个 pre-commit 钩子：提交涉及文档时校验中英配对是否同步，不同步即
+拦下（见 [CLAUDE.md](CLAUDE.md)）。钩子不随仓库克隆，每个 checkout 需装一次。
 
 `cdk synth` 不调用 AWS 账号。部署需已 bootstrap 的 CDK 环境与创建 AgentCore Memory 的权限。
 

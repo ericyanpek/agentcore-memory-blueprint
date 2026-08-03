@@ -34,11 +34,23 @@ a translation of it. Editing either does not oblige you to touch the other.
 ### Checking alignment
 
 ```bash
+./scripts/install_hooks.sh          # once per checkout
 python3 scripts/check_doc_alignment.py
 ```
 
-It compares heading counts, table rows, code fences, and link targets across each pair, and
-exits non-zero on divergence. Run it before committing documentation changes.
+The checker compares heading structure, table rows, code fences, verbatim test output, and
+link targets across each pair, and exits non-zero on divergence.
+
+`install_hooks.sh` installs a `pre-commit` hook that runs the checker whenever a commit
+touches documentation, so a half-updated pair is rejected rather than merged. Hooks are not
+cloned with a repository, so each checkout installs it once. The hook is written to
+`.git/hooks/` rather than through `core.hooksPath`, because on a managed machine that
+setting may already point at a corporate hooks directory — repository-local hooks still run
+in that arrangement, and both checks apply.
+
+If a divergence is intentional, say why in the commit message and bypass with
+`CODE_DEFENDER_SKIP_LOCAL_HOOKS=true git commit ...` rather than `--no-verify`, which on a
+managed machine also skips the corporate security scan.
 
 ### What must match, and what must not
 

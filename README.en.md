@@ -203,10 +203,15 @@ prompts and responses per turn; the Chinese report is the interpreted version.
 ## Quick Start
 
 ```bash
+./scripts/install_hooks.sh
 python3 -m unittest discover -s tests -v
 ./poc/build_lambda_layer.sh
 cd infra && nvm use && npm install && npm run build && npm test && npx cdk synth
 ```
+
+`install_hooks.sh` installs a pre-commit hook that verifies the Chinese and English copies
+of each document stayed in sync, and rejects the commit when they did not (see
+[CLAUDE.md](CLAUDE.md)). Hooks are not cloned with a repository, so run it once per checkout.
 
 `cdk synth` does not call the AWS account. Deployment requires a bootstrapped CDK
 environment and permission to create AgentCore Memory resources.
