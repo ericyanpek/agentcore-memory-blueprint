@@ -405,6 +405,15 @@ script.
 
 ## Also worth doing
 
+- **Not adopting a `DRAFT` state, and the reason is recorded here.** Registry's state
+  machine begins at `DRAFT` so a proposer can create a record and choose when to submit it
+  for approval. Aligning with that was considered and rejected as unnecessary: on the
+  desktop side `memory_capture_evidence` is already a step separate from proposing, and
+  `memory_propose_shared` requires an `evidence_ref` pointing at an immutable record, so
+  "accumulate evidence, then submit" is already satisfied by the tool boundary. Adding a
+  state would complicate both the state machine and the review queue without buying a new
+  capability.
+
 - **Remove `USER_PASSWORD_AUTH`.** `infra/lib/memory-governance-stack.ts` enables
   both `userPassword` and `userSrp`. SRP alone is sufficient, and the password flow
   is unnecessary attack surface. The bridge's use of password auth is already
