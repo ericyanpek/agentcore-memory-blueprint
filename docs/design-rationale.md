@@ -117,6 +117,54 @@ to one actor by IAM, but it is not reviewed. This is a deliberate boundary, not 
 oversight — reviewing every personal preference would make the system unusable — but
 it should not be described as "memory is reviewed".
 
+### A native counterpart already exists in the same service: AgentCore Registry
+
+The strongest support for this section is not an external paper but AgentCore itself. The
+same service ships a complete approval state machine on its **Registry** resource:
+`SubmitRegistryRecordForApproval`, `UpdateRegistryRecordStatus`, and `ListRegistryRecords`
+filtered by status, with values
+`DRAFT | PENDING_APPROVAL | APPROVED | REJECTED | DEPRECATED` (plus `CREATING`/`UPDATING`
+and two failure states).
+
+What makes this finding useful is **conceptual, not implementational**:
+
+- This blueprint's candidate state machine is near-isomorphic to it
+  (`PENDING_REVIEW`/`PUBLISHED`/`REJECTED_REVIEW`/`PUBLISH_FAILED`), which means "propose →
+  await review → approve or reject → terminal" is not a shape this project invented. It is
+  the shape AWS arrived at when governing agent capability descriptors.
+- **Submission and adjudication are separate APIs**, and that split is precisely what lets
+  separation of duties be enforced by IAM. Measured: a principal holding
+  `SubmitRegistryRecordForApproval` but not `UpdateRegistryRecordStatus` receives
+  `AccessDeniedException` when attempting to approve, and the inverse holds too. That
+  establishes platform-side feasibility for item 2 of [roadmap.md](roadmap.md) (separating
+  the right to propose from the right to approve).
+- `UpdateRegistryRecordStatus` makes `statusReason` a required parameter, meaning AWS treats
+  **a stated reason as part of adjudication**. This blueprint follows that by requiring a
+  reason and persisting it on the audit record (`src/handlers/reviewer_api.py`) — the one
+  borrowing in this exercise that landed directly in code.
+
+**But Registry cannot hold knowledge statements, which testing ruled out.** Three hard
+constraints:
+
+1. **Retrieval is unusable.** `descriptors.custom.inlineContent` is not indexed at all, and
+   search is lexical rather than semantic — an invented token present only in
+   `inlineContent` cannot be found, and a pure paraphrase does not match. Semantic retrieval
+   is the whole point of memory, so this alone disqualifies it.
+2. **Approval does not bind to content.** Calling `UpdateRegistryRecord` on an `APPROVED`
+   record **succeeds**: the content is replaced, the status silently reverts to `DRAFT`, and
+   `statusReason` is cleared. Registry therefore cannot serve as the system of record for
+   "this exact text was approved by this person", which is this blueprint's central claim.
+3. **`statusReason` is mandatory only in the SDK.** The service accepts an empty string. This
+   blueprint's 10–500 character check is consequently stricter than the platform's own.
+
+**Conclusion: borrow the governance shape and the vocabulary, not the storage.** The candidate
+lifecycle stays in DynamoDB (where immutable evidence and a one-time callback token can be
+bound to it) and retrieval stays in AgentCore Memory (real semantic search plus metadata
+pre-filtering). The transition rules are not copied either — Registry permits
+`REJECTED → APPROVED`, silently overriding a rejection, and permits replaying `APPROVED`,
+whereas this blueprint's one-time token returns 409 on replay (check 11 in
+[实验报告](实验报告.md)).
+
 ## 4. Two Memory resources instead of one
 
 **The choice.** `PersonalMemory` and `SharedProjectMemory` are separate resources,

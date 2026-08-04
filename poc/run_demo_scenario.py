@@ -324,6 +324,7 @@ def call_review_api(
     *,
     token: str | None,
     decision: str | None = None,
+    reason: str = "Scenario run: evidence and statement checked by the reviewer.",
 ) -> tuple[int, Any]:
     headers = {"content-type": "application/json"}
     if token:
@@ -331,7 +332,13 @@ def call_review_api(
     request = urllib.request.Request(
         url,
         method="POST" if decision else "GET",
-        data=json.dumps({"decision": decision}).encode() if decision else None,
+        data=(
+            json.dumps(
+                {"decision": decision, "status_reason": reason}
+            ).encode()
+            if decision
+            else None
+        ),
         headers=headers,
     )
     try:

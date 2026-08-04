@@ -105,6 +105,49 @@ class ReviewerApiTests(unittest.TestCase):
             response["headers"]["access-control-allow-origin"], REVIEWER_ORIGIN
         )
 
+    def _decide_event(self, body: dict) -> dict:
+        event = reviewer_event("POST", {"candidate_id": "cand-a"})
+        event["body"] = json.dumps(body)
+        return event
+
+    def test_decision_without_a_reason_is_rejected(self) -> None:
+        # AgentCore's own UpdateRegistryRecordStatus requires statusReason; a decision
+        # with no stated grounds records that someone signed off but not why.
+        response = self.module.handler(
+            self._decide_event({"decision": "APPROVED"}), None
+        )
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertIn("status_reason", json.loads(response["body"])["message"])
+
+    def test_reason_must_be_a_real_sentence(self) -> None:
+        response = self.module.handler(
+            self._decide_event({"decision": "APPROVED", "status_reason": "ok"}), None
+        )
+
+        self.assertEqual(response["statusCode"], 400)
+
+    def test_reason_is_length_capped(self) -> None:
+        response = self.module.handler(
+            self._decide_event(
+                {"decision": "APPROVED", "status_reason": "x" * 501}
+            ),
+            None,
+        )
+
+        self.assertEqual(response["statusCode"], 400)
+
+    def test_reason_is_validated_before_the_callback_is_touched(self) -> None:
+        # Ordering matters: rejecting the request after the callback row has moved to
+        # DECIDING would strand the candidate with no way to decide it again.
+        callbacks = mock.Mock()
+        self.module.CALLBACKS = callbacks
+
+        self.module.handler(self._decide_event({"decision": "APPROVED"}), None)
+
+        callbacks.get_item.assert_not_called()
+        callbacks.update_item.assert_not_called()
+
     def test_non_reviewer_is_rejected(self) -> None:
         event = reviewer_event("GET")
         event["requestContext"]["authorizer"]["claims"]["cognito:groups"] = ["other"]

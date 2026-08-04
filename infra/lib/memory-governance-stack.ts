@@ -483,6 +483,9 @@ export class MemoryGovernanceStack extends Stack {
         candidate_id: sfn.JsonPath.stringAt("$.candidate_id"),
         project_id: sfn.JsonPath.stringAt("$.project_id"),
         reviewer_id: sfn.JsonPath.stringAt("$.review.reviewer_id"),
+        // Carried through so MarkPublished can persist the reviewer's rationale on the
+        // candidate record; the publish handler spreads its input into its output.
+        status_reason: sfn.JsonPath.stringAt("$.review.status_reason"),
       }),
       outputPath: "$.Payload",
       retryOnServiceExceptions: true,
@@ -576,9 +579,11 @@ export class MemoryGovernanceStack extends Stack {
       target_status: status,
     };
     if (includeReview) {
-      payload.reviewer_id = sfn.JsonPath.stringAt(
-        status === "PUBLISHED" ? "$.reviewer_id" : "$.review.reviewer_id",
-      );
+      // PublishShared spreads the review result into its own output, so by the time the
+      // PUBLISHED branch runs these fields sit at the root rather than under $.review.
+      const prefix = status === "PUBLISHED" ? "$" : "$.review";
+      payload.reviewer_id = sfn.JsonPath.stringAt(`${prefix}.reviewer_id`);
+      payload.status_reason = sfn.JsonPath.stringAt(`${prefix}.status_reason`);
     }
     if (status === "PUBLISHED") {
       payload.shared_memory_record_id = sfn.JsonPath.stringAt(

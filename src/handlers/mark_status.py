@@ -26,6 +26,12 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     if event.get("shared_memory_record_id"):
         update += ", shared_memory_record_id = :memory_record"
         values[":memory_record"] = event["shared_memory_record_id"]
+    # The reviewer's stated reason belongs on the candidate record, not only on the
+    # callback row that is consumed and then forgotten. Without it the audit trail records
+    # that a decision happened but not on what grounds.
+    if event.get("status_reason"):
+        update += ", status_reason = :reason"
+        values[":reason"] = event["status_reason"]
 
     CANDIDATES.update_item(
         Key={"candidate_id": event["candidate_id"]},

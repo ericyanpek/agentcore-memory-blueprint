@@ -17,6 +17,8 @@ CALLBACKS = boto3.resource("dynamodb").Table(os.environ["CALLBACK_TABLE_NAME"])
 SFN = boto3.client("stepfunctions")
 REVIEWER_GROUP = os.environ["REVIEWER_GROUP"]
 REVIEWER_ORIGIN = os.environ["REVIEWER_ORIGIN"]
+# Long enough to force a real sentence, short enough to stay a reason not an essay.
+MIN_REASON, MAX_REASON = 10, 500
 
 
 def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
@@ -98,6 +100,22 @@ def _decide(
     if decision not in {"APPROVED", "REJECTED"}:
         return _response(400, {"message": "decision must be APPROVED or REJECTED"})
 
+    # AgentCore's own approval API (UpdateRegistryRecordStatus) makes statusReason a
+    # required parameter, and the reason is the part of the audit record that explains a
+    # decision rather than merely recording it. A bare APPROVED tells a later reader that
+    # someone signed off, not why the claim was judged sound.
+    status_reason = str(body.get("status_reason", "")).strip()
+    if not MIN_REASON <= len(status_reason) <= MAX_REASON:
+        return _response(
+            400,
+            {
+                "message": (
+                    f"status_reason is required and must be "
+                    f"{MIN_REASON}-{MAX_REASON} characters"
+                )
+            },
+        )
+
     callback = CALLBACKS.get_item(
         Key={"candidate_id": candidate_id},
         ConsistentRead=True,
@@ -111,7 +129,8 @@ def _decide(
             Key={"candidate_id": candidate_id},
             UpdateExpression=(
                 "SET #status = :deciding, reviewer_id = :reviewer, "
-                "decision = :decision, decided_at = :now"
+                "decision = :decision, decided_at = :now, "
+                "status_reason = :reason"
             ),
             ExpressionAttributeNames={"#status": "status"},
             ExpressionAttributeValues={
@@ -119,6 +138,7 @@ def _decide(
                 ":reviewer": reviewer_id,
                 ":decision": decision,
                 ":now": now,
+                ":reason": status_reason,
             },
             ConditionExpression=Attr("status").eq("WAITING"),
         )
@@ -133,6 +153,7 @@ def _decide(
                 "decision": decision,
                 "reviewer_id": reviewer_id,
                 "reviewed_at": now,
+                "status_reason": status_reason,
             }
         ),
     )
@@ -145,7 +166,14 @@ def _decide(
         },
         ConditionExpression=Attr("status").eq("DECIDING"),
     )
-    return _response(200, {"candidate_id": candidate_id, "decision": decision})
+    return _response(
+        200,
+        {
+            "candidate_id": candidate_id,
+            "decision": decision,
+            "status_reason": status_reason,
+        },
+    )
 
 
 def _response(status_code: int, body: Any) -> dict[str, Any]:

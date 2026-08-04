@@ -65,7 +65,24 @@ distinguishable from an authorization failure in logs and tests. For deployments
 with too few reviewers to make this practical, make the rule a deployment parameter
 that defaults to enforcing separation, and record the exception explicitly.
 
-**Files.** `src/handlers/reviewer_api.py`, `tests/test_reviewer_api.py`, the
+**The platform has already shown this boundary can move down into IAM.** The approach above
+is an application-layer check; testing confirms AgentCore splits submission and adjudication
+into two independent actions on Registry, so IAM can enforce the separation instead of code
+being trusted to:
+
+| Credential | Attempt to propose | Attempt to approve |
+|---|---|---|
+| Holds only `SubmitRegistryRecordForApproval` | allowed | **AccessDeniedException** |
+| Holds only `UpdateRegistryRecordStatus` | **AccessDeniedException** | allowed |
+
+For this project that means the proposal Lambda and the review Lambda should hold
+non-overlapping action sets, making self-approval impossible at the IAM layer rather than
+merely refused by application code. This is standard AWS practice and not expensive, but it
+requires splitting the current single reviewer Lambda — hence a direction rather than an
+immediate change.
+
+**Files.** `src/handlers/reviewer_api.py`, `tests/test_reviewer_api.py`,
+`infra/lib/memory-governance-stack.ts` (splitting the Lambda and its policies), the
 Permissions section of `docs/architecture.md`.
 
 Related: reviewer group membership is enforced in Lambda code rather than at the
@@ -139,10 +156,33 @@ reasons rather than capability ones:
 - Keep both records. The audit trail requires knowing what the team believed and
   when, which a hard delete destroys.
 
+**Use the status name AgentCore already has rather than inventing one.** The approval state
+machine on AgentCore Registry already has a terminal state called `DEPRECATED`, and testing
+confirms the platform itself treats it as terminal — any status change on a record in that
+state is refused:
+
+```
+Cannot update registry record in DEPRECATED status (terminal state)
+```
+
+What is worth borrowing here is not the API but **its modelling choice for supersession**:
+superseded knowledge is not deleted but moved into a state that can no longer change, so it
+leaves the currently-valid set while staying in the audit record. That runs in the same
+direction as the "keep both records" argument above and supplies an official vocabulary — so
+this project should adopt `DEPRECATED` rather than coin `superseded`, on the grounds that one
+concept inside one service should have one name.
+
+**Borrow the name and the terminal semantics only, not the transition rules.** Testing
+Registry's transition matrix surfaced two behaviours that do not suit knowledge governance:
+`REJECTED → APPROVED` is permitted (a rejection can be silently overridden with no
+re-review), and replaying `APPROVED → APPROVED` succeeds. This project's one-time callback
+token returns 409 on replay (check 11 in [实验报告](实验报告.md)), which is stricter than
+Registry and should not be relaxed to match it.
+
 **Route the decision through the existing review workflow, not through a model.**
 Add an optional `supersedes: <record_id>` field to the candidate contract. Approving
 such a candidate publishes the new record and, in the same workflow branch, flips the
-old record's status. The reviewer decides what supersedes what.
+old record to `DEPRECATED`. The reviewer decides what supersedes what.
 
 This last point is deliberate. Automated contradiction detection is the weakest
 component in comparable systems: reported conflict-resolution scores are the lowest

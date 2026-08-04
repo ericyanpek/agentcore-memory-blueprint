@@ -226,7 +226,15 @@ def approve_candidate(url: str, token: str) -> dict[str, Any]:
     request = urllib.request.Request(
         url,
         method="POST",
-        data=json.dumps({"decision": "APPROVED"}).encode(),
+        data=json.dumps(
+            {
+                "decision": "APPROVED",
+                "status_reason": (
+                    "Validation run: evidence reference checks out and the "
+                    "statement is independently understandable."
+                ),
+            }
+        ).encode(),
         headers={
             "authorization": token,
             "content-type": "application/json",

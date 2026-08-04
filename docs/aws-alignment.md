@@ -20,7 +20,7 @@ relationships:
 | Layer | Content |
 |---|---|
 | **Codified by AWS** | Human review, namespace isolation, IAM condition keys, deterministic risk classification — the Lens states these, and this project is a runnable reference implementation |
-| **AWS points at it but ships no primitive** | "Memory governance is codified and auditable" is the Level 5 goal of AGENTSEC01, but AgentCore Memory provides no approval gate. This layer is customer-built |
+| **AWS built the primitive but did not wire it to Memory** | "Memory governance is codified and auditable" is the Level 5 goal of AGENTSEC01. AgentCore **already has a full approval state machine on its Registry resource** (`SubmitRegistryRecordForApproval` / `UpdateRegistryRecordStatus`), but the Memory resource is not connected to it. This layer is customer-built |
 | **AWS is silent** | Admission control for shared memory, the retrieval precedence order, version-pinned evidence — no official source; these are the project's engineering judgements |
 
 Layers two and three are where the actual contribution sits. The value of layer one is
@@ -311,7 +311,7 @@ Listed plainly, so the project does not overclaim:
 
 | Design element | Status |
 |---|---|
-| **A native approval gate on memory writes** | Not provided by AgentCore Memory. AWS endorses HITL as a general pattern (AGENTSEC04-BP02) but ships no primitive for memory curation. The EventBridge → Step Functions pipeline here is customer-built |
+| **A native approval gate on memory writes** | Not provided by AgentCore Memory — but state this precisely: the **Registry resource in the same service does have one** (see section 3 of [design-rationale.md](design-rationale.md)). The accurate claim is not "AWS has no approval primitive" but "AWS already built one and Memory is not wired to it." The EventBridge → Step Functions pipeline here is customer-built |
 | **"Team knowledge" as a governance category** | AWS documents shared namespaces but not the approval curation that decides what qualifies to enter one |
 | **The retrieval precedence total order** | No AWS source |
 | **`evidence_ref` pinning an S3 versionId as memory provenance** | S3 Object Lock's WORM semantics are fully documented, but AWS never frames versionId pinning as a provenance mechanism for AI memory |

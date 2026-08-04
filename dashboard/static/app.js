@@ -366,6 +366,7 @@ function candidateCard(candidate) {
       ["promotion hint", candidate.promotion_hint],
       ["shared record ID", candidate.shared_memory_record_id],
       ["reviewer ID", candidate.reviewer_id],
+      ["review reason", candidate.status_reason],
       ["created at", candidate.created_at],
       ["updated at", candidate.updated_at],
       ["workflow execution", candidate.workflow_execution_id],
@@ -385,13 +386,25 @@ function candidateCard(candidate) {
 }
 
 async function decide(candidateId, decision, actions) {
+  // The API requires a rationale, so ask for it here rather than letting the request
+  // fail: the reason is what the audit record needs in order to explain the decision.
+  const reason = (
+    window.prompt(
+      `Reason for ${decision.toLowerCase()} (10-500 characters, stored on the audit record):`,
+      "",
+    ) || ""
+  ).trim();
+  if (reason.length < 10) {
+    toast("A reason of at least 10 characters is required.", true);
+    return;
+  }
   actions
     .querySelectorAll("button")
     .forEach((button) => (button.disabled = true));
   try {
     await reviewApi(`/reviews/${encodeURIComponent(candidateId)}`, {
       method: "POST",
-      body: { decision },
+      body: { decision, status_reason: reason },
     });
     toast(`${candidateId} ${decision.toLowerCase()} — workflow resumed.`);
     setTimeout(loadCandidates, 3500);

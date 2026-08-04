@@ -16,7 +16,7 @@ Well-Architected Lens 不是先验规范。它的形成路径是：解决方案�
 | 层次 | 内容 |
 |---|---|
 | **AWS 已编纂** | 人工审核、命名空间隔离、IAM 条件键、确定性风险分类 —— Lens 已写明，本项目是可运行的参考实现 |
-| **AWS 已指出方向但未提供原语** | 记忆治理"可编码可审计"是 AGENTSEC01 的 Level 5 目标，但 AgentCore Memory 平台不提供审核闸门。这段是客户自建 |
+| **AWS 已建原语但未接入 Memory** | 记忆治理"可编码可审计"是 AGENTSEC01 的 Level 5 目标。AgentCore **在 Registry 资源上已有完整审批状态机**（`SubmitRegistryRecordForApproval` / `UpdateRegistryRecordStatus`），但 Memory 资源没有接入它。这段是客户自建 |
 | **AWS 尚未覆盖** | 共享记忆的准入治理、检索优先级全序、证据版本固定 —— 无官方来源，属本项目的工程判断 |
 
 第二层和第三层才是这个项目的实际贡献。第一层的价值在于：它证明这些选择不是个人偏好，
@@ -286,7 +286,7 @@ https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html
 
 | 设计要素 | 状态 |
 |---|---|
-| **记忆写入的原生审核闸门** | AgentCore Memory 平台不提供。AWS 认可 HITL 是通用模式（AGENTSEC04-BP02），但未针对记忆策划提供原语。本项目的 EventBridge → Step Functions 链路是客户自建架构 |
+| **记忆写入的原生审核闸门** | AgentCore Memory 不提供 —— 但需精确表述：同一服务的 **Registry 资源有**（见[设计取舍依据](设计取舍依据.md)第三节）。所以准确的说法不是「AWS 没有审批原语」，而是「AWS 已经建好了，只是 Memory 没接」。本项目的 EventBridge → Step Functions 链路是客户自建架构 |
 | **"团队知识"作为治理类别** | AWS 文档讲共享命名空间，但不讲"什么内容有资格进入共享命名空间"的审批策划 |
 | **检索优先级全序** | 无 AWS 来源 |
 | **`evidence_ref` 固定 S3 versionId 作为记忆证据** | S3 Object Lock 的 WORM 语义有完整文档，但 AWS 没有把 versionId 固定表述为 AI 记忆的溯源机制 |

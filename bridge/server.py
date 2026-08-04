@@ -460,20 +460,29 @@ def memory_review_queue(status: str | None = None) -> dict[str, Any]:
 
 
 @mcp.tool()
-def memory_review_decide(candidate_id: str, decision: str) -> dict[str, Any]:
+def memory_review_decide(
+    candidate_id: str, decision: str, status_reason: str
+) -> dict[str, Any]:
     """Approve or reject a candidate. Requires project reviewer group membership.
 
     Approval publishes the reviewed text verbatim to shared memory through the
     review workflow. A decision cannot be replayed.
+
+    `status_reason` is required and is stored on the audit record: state why the claim
+    is sound (or why it is not), so a later reader knows the grounds and not merely
+    that someone signed off. AgentCore's own approval API requires the same field.
     """
     decision = decision.strip().upper()
     if decision not in {"APPROVED", "REJECTED"}:
         return _fail("decision must be APPROVED or REJECTED")
+    status_reason = status_reason.strip()
+    if not 10 <= len(status_reason) <= 500:
+        return _fail("status_reason is required and must be 10-500 characters")
     try:
         code, body = _review_api(
             f"/reviews/{urllib.parse.quote(candidate_id)}",
             method="POST",
-            payload={"decision": decision},
+            payload={"decision": decision, "status_reason": status_reason},
         )
     except IdentityError as error:
         return _fail(str(error))
