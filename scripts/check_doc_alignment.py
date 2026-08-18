@@ -30,7 +30,7 @@ PAIRS = [
     ("docs/演示手册.md", "docs/demo-runbook.md"),
     ("docs/评估记录.md", "docs/sample-review.md"),
     ("docs/参考资料.md", "docs/references.md"),
-    ("docs/记忆产品横评.md", "docs/memory-landscape.md"),
+    ("docs/定位分析.md", "docs/positioning-analysis.md"),
     ("docs/AWS官方背书.md", "docs/aws-alignment.md"),
     ("docs/桌面客户端集成设计.md", "docs/desktop-client-integration.md"),
     ("docs/为什么按写入权威分层.md", "docs/why-layer-by-write-authority.md"),

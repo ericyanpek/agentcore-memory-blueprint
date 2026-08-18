@@ -18,6 +18,6 @@ infra/layer/python/*
 # published. They stay on disk and out of version control.
 *HANDOFF*
 *handoff*
-docs/定位分析.md
-docs/positioning-analysis.md
+docs/记忆产品横评.md
+docs/memory-landscape.md
 docs/superpowers/

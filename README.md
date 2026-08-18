@@ -115,8 +115,6 @@ Kinesis record streaming，以及控制面和数据面 PrivateLink；CDK L2 已�
 
 ## 与业内产品的关系
 
-完整横评（含一手来源与未核实项）见**[记忆产品横评](docs/记忆产品横评.md)**。
-
 **本蓝图依赖的平台能力**：隔离由 `bedrock-agentcore:actorId`/`namespace` 等 IAM 条件键在
 平台侧强制，而不是由应用层参数或数据库列表达 —— 这是治理边界能落到 IAM 上的前提。元数据
 过滤是**预过滤**（在向量检索前缩小候选集）、10 个操作符、`STRICTLY_CONSISTENT` 元数据可由
@@ -183,7 +181,7 @@ Guardrails 与 PII 过滤、Level 4 的 HMAC 逐读校验。即**治理维度很
 的组合 —— 这四项无官方来源，不应声称有背书。
 
 > 引用纪律上的两点：`INVALID` 状态只见于 AWS 博客，**开发者指南与 API 文档中查不到**
-> （详见上文"与业内产品的关系"及[记忆产品横评](docs/记忆产品横评.md)）—— 官方来源之间
+> （详见上文"与业内产品的关系"）—— 官方来源之间
 > 存在不一致时，本蓝图按 API 文档行事。另有二手来源提到 `strategyId` 条件键，在官方
 > Service Authorization Reference 页面未能确认，故不引用。
 
@@ -233,7 +231,7 @@ flowchart LR
 | [设计取舍依据](docs/设计取舍依据.md) | [design-rationale](docs/design-rationale.md) | 核心特点的取舍理由与外部证据 |
 | [为什么按写入权威分层](docs/为什么按写入权威分层.md) | [why-layer-by-write-authority](docs/why-layer-by-write-authority.md) | 不依赖任何平台的分层论证与承重边界 |
 | [AWS 官方背书](docs/AWS官方背书.md) | [aws-alignment](docs/aws-alignment.md) | 每条主张对齐到 AWS 官方文档，含实现位置与实测证据 |
-| [记忆产品横评](docs/记忆产品横评.md) | [memory-landscape](docs/memory-landscape.md) | AgentCore 与 mem0/Zep/Letta 等的能力对照与放大效应 |
+| [定位分析](docs/定位分析.md) | [positioning-analysis](docs/positioning-analysis.md) | 外部调研笔记：差异化在哪、四个必答反驳、不可引用清单 |
 | [下一步演进](docs/下一步演进.md) | [roadmap](docs/roadmap.md) | 按优先级排列的演进项，含取代语义 |
 | [演示手册](docs/演示手册.md) | [demo-runbook](docs/demo-runbook.md) | 端到端演示流程 |
 | [评估记录](docs/评估记录.md) | [sample-review](docs/sample-review.md) | 官方示例的吸收结论与推迟项 |

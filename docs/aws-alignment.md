@@ -326,9 +326,8 @@ operations are only create/update/delete. This is a disagreement between officia
 sources rather than a pure citation error.
 
 **How it is handled: follow the API documentation and do not depend on the behaviour.** The
-blueprint's supersession mechanism uses its own discrete status flag (see
-[memory-landscape.md](memory-landscape.md) and item 4 of [roadmap.md](roadmap.md)) and does
-not assume a platform-side `INVALID`. Any citation should surface the disagreement rather
+blueprint's supersession mechanism uses its own discrete status flag (see item 4 of
+[roadmap.md](roadmap.md)) and does not assume a platform-side `INVALID`. Any citation should surface the disagreement rather
 than quote the blog alone.
 
 ## Not citable as an AWS position
