@@ -257,7 +257,9 @@ nobody proposes, the whole governance mechanism idles** — the review queue sta
 and shared memory never accumulates. The candidates in the experiment report were
 produced by a script calling the API directly, not proposed by an agent.
 
-**Target behaviour, two independent changes.**
+**Target behaviour, four changes.** Changes 1 and 2 address the proposal itself; changes 3
+and 4 address the trigger — the latter two are conclusions from the 2026-08-18 discussion
+and are not implemented.
 
 1. **Convey the judgment criteria to the model — done.** The
    `memory_propose_shared` docstring now defines each `category` (`fact` is an
@@ -280,12 +282,80 @@ produced by a script calling the API directly, not proposed by an agent.
    at the end of each turn keeps evidence always ready, leaving the model only the
    judgment of whether a statement is worth proposing.
 
-The division of labour: change 1 addresses the judgment itself (done), change 2 removes
-the prerequisite burden (outstanding).
+3. **A proposal-judgment Skill, at the moment contribution costs least — not done.** Add a
+   memory Skill under `skills/` that teaches the agent to recognise a conversation where
+   something was finally pinned down after several rounds of clarification — a definition
+   settled after repeated questioning, a failure traced to its cause, a constraint
+   confirmed by trial and error — and to prompt the user to propose at that moment rather
+   than waiting for them to remember. **This is not merely an ergonomic improvement; it is
+   the only path that preserves the attribution chain**: the statement comes from the person
+   who has it, the `evidence_ref` points at that real conversation, and
+   `proposer_actor_id` is still derived server-side from the token's `sub`. One
+   third-party production deployment takes the same route, moving approval to the moment of
+   capture and having the contributor perform it (see "Four: reviewer throughput and
+   fatigue" in [positioning-analysis](positioning-analysis.md); that source is unverified).
+4. **A scheduled agent that directs attention without producing proposals — not done.** An
+   administrator role or scheduled task can discover **which questions keep recurring**, but
+   **it should not propose on its own**. The reason is attributability: such a proposal
+   would either be signed by the agent itself (breaking "who wrote this, on what evidence")
+   or by some user (which is forgery), and its evidence could only point at aggregate
+   statistics rather than a conversation anyone can revisit. **Its output is therefore a
+   list of topics, handed to the Skill in change 3 for the next time someone actually
+   explains one of them.**
+
+**A scheduled agent needs to read no memory content at all — that is why the privacy
+boundary holds.** Its data source is the retrieval metrics emitted by
+`src/agent/context_builder.py` (CloudWatch logs), not Memory:
+
+| | Scanning long-term memory | Scanning retrieval metrics |
+|---|---|---|
+| Permission required | Cross-actor read of everyone's personal memory | `logs:FilterLogEvents` |
+| What is visible | Memory text | Per-token hash sets and hit counts |
+| Privacy boundary | **Breaks the `actorId` condition key's premise** | No personal data to read |
+| Noise | High | Already reduced |
+
+A role that can read every user's personal memory needs exactly the permission the IAM
+condition keys deliberately withhold — and this blueprint elsewhere quotes Databricks'
+"The app service principal can read every scope." to criticise that very design. Building
+another one would collapse its own argument. The metrics path does not have the problem:
+sensitive content is hashed before it reaches the log, rather than being masked after the
+fact by access control.
+
+**The shared tier and the personal tier are different cases.** Reviewed shared records are
+already visible to the team, so an administrator agent scanning them raises no privacy
+question — deduplication and spotting records due for promotion both should scan them. The
+boundary is the personal tier only.
+
+**Prompt frequency is itself a habituation risk.** A Skill that asks "worth writing this
+down?" every turn teaches the user to dismiss it reflexively, producing an entrance that
+looks functional and is entirely noise — the same mechanism as the reviewer fatigue recorded
+in the README's limitations. **The value of change 4 is therefore not finding more topics
+but making prompts rare**: rarity is what gives them precision.
+
+**Division of labour across the four.** Change 1 settles the criteria (done), change 2
+removes the prerequisite burden (outstanding), change 3 supplies the trigger (outstanding),
+and change 4 gives change 3 a frequency gate (outstanding).
+
+**The cold-start order is a hard constraint.** The retrieval metrics hold no data yet, so
+change 3 must ship on the model's own judgment first and tolerate a noisy period, switching
+to a metrics gate once enough has accumulated. The reverse does not work: with no metric
+data, the Skill can still function on model judgment alone.
 
 **Remaining files.** `.mcp.json` and hook configuration (automatic evidence capture);
-optionally `skills/`, to give the same criteria to runtimes that do not read MCP tool
-descriptions.
+`skills/` for the proposal-judgment Skill; `poc/analyze_retrieval_metrics.py` (a topic-list
+output for a scheduled agent to consume).
+
+> **Fix three defects in the instrumentation first, or change 4 rests on bad data.** First,
+> `fingerprint_query` tokenises on `[a-z0-9]+`, which is **entirely ineffective for Chinese**
+> (no tokens means an empty set), and the desktop path is used mostly in Chinese. Second, a
+> fingerprint detects only similarly worded repeats, not the same question asked
+> differently; catching the latter means storing embeddings, which are no longer
+> irreversible. Third, the instrumentation currently exists only in
+> `src/agent/context_builder.py` (the Runtime path) — **the desktop bridge is not
+> instrumented, and that is where the traffic is** — and the fingerprint algorithm must be
+> identical on both sides, or the same question produces different hashes on each path and
+> cross-path repeat detection silently fails. That is a correctness problem, not a matter of
+> code style.
 
 > `poc/runtime_agent.py` is deliberately excluded: it has no proposal tool at all, and
 > its system prompt only governs consuming shared memory. The proposal capability exists
