@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
+import re
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -42,6 +45,51 @@ class ContextBundle:
                 "A managed document overrides memory. Current tool data overrides all "
                 "retrieved context. Personal preferences may change presentation only."
             ),
+        }
+
+
+def fingerprint_query(query: str) -> list[str]:
+    """Per-token hashes: enough to measure overlap between two queries, not enough to
+    reconstruct either. A query can contain the thing the memory tier exists to protect."""
+    tokens = {
+        token
+        for token in re.findall(r"[a-z0-9]+", query.lower())
+        if len(token) > 2
+    }
+    return sorted(
+        hashlib.sha256(token.encode("utf-8")).hexdigest()[:12] for token in tokens
+    )
+
+
+@dataclass(frozen=True)
+class RetrievalMetrics:
+    query_fingerprint: list[str]
+    shared_candidates: int
+    shared_top_score: float | None
+
+    @classmethod
+    def from_records(
+        cls,
+        *,
+        query: str,
+        records: list[dict[str, Any]],
+    ) -> "RetrievalMetrics":
+        scores = [
+            record["score"] for record in records if record.get("score") is not None
+        ]
+        return cls(
+            query_fingerprint=fingerprint_query(query),
+            shared_candidates=len(records),
+            shared_top_score=max(scores) if scores else None,
+        )
+
+    def as_log_record(self) -> dict[str, Any]:
+        return {
+            "metric": "shared_memory_retrieval",
+            "query_fingerprint": self.query_fingerprint,
+            "shared_candidates": self.shared_candidates,
+            "shared_hit": self.shared_candidates > 0,
+            "shared_top_score": self.shared_top_score,
         }
 
 
@@ -92,6 +140,11 @@ class ContextBuilder:
             namespace=f"/users/{user_actor}/preferences/",
             query=query,
             top_k=3,
+        )
+        LOGGER.info(
+            json.dumps(
+                RetrievalMetrics.from_records(query=query, records=shared).as_log_record()
+            )
         )
         return ContextBundle(
             authoritative_documents=documents,
