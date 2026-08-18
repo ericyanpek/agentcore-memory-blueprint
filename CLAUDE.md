@@ -26,7 +26,6 @@ or a withdrawn claim matters more in the version you did not update, not less.
 | `docs/AWS官方背书.md` | `docs/aws-alignment.md` |
 | `docs/桌面客户端集成设计.md` | `docs/desktop-client-integration.md` |
 | `docs/为什么按写入权威分层.md` | `docs/why-layer-by-write-authority.md` |
-| `docs/定位分析.md` | `docs/positioning-analysis.md` |
 | `docs/ENTERPRISE_GOVERNANCE_BLUEPRINT.md` | `docs/ENTERPRISE_GOVERNANCE_BLUEPRINT.en.md` |
 | `docs/CONTROL_BASELINE.md` | `docs/CONTROL_BASELINE.en.md` |
 | `docs/OBSERVABILITY_BLUEPRINT.md` | `docs/OBSERVABILITY_BLUEPRINT.en.md` |
@@ -39,10 +38,21 @@ or a withdrawn claim matters more in the version you did not update, not less.
 translation duty — `docs/实验报告.md` is a hand-written interpretation of the same run, not
 a translation of it. Editing either does not oblige you to touch the other.
 
-Handoff notes are internal working documents and are **not published**: `.gitignore` excludes
-any path matching `*HANDOFF*` or `*handoff*`, and they carry no translation duty. Do not add
-them to the table above or to `PAIRS` — this repository is public, and a handoff report
-records unverified assumptions and internal ownership that are not meant to leave the team.
+### Internal working documents are not published
+
+This repository is public. Some documents carry competitive research, unverified citations,
+or internal judgement that is not meant to leave the team, so `.gitignore` keeps them on
+disk and out of version control:
+
+- any path matching `*HANDOFF*` or `*handoff*` — handoff notes record unverified
+  assumptions and internal ownership
+- `docs/定位分析.md` and `docs/positioning-analysis.md` — positioning analysis, including
+  named competitor research and citations this repository has not verified
+- `docs/superpowers/` — implementation plans and working notes
+
+These carry no translation duty. **Do not add them to the table above or to `PAIRS`.** The
+alignment checker asks git whether a file is tracked, so an ignored document is skipped
+automatically rather than reported as an unpaired one.
 
 ### Checking alignment
 

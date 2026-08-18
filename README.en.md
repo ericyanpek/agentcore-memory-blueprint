@@ -290,7 +290,6 @@ Chinese is the primary language for documentation; English translations are kept
 | [架构设计](docs/架构设计.md) | [architecture](docs/architecture.md) | Trust boundaries, retrieval precedence, information lifecycle |
 | [设计取舍依据](docs/设计取舍依据.md) | [design-rationale](docs/design-rationale.md) | Reasoning behind the distinctive choices, with external evidence |
 | [为什么按写入权威分层](docs/为什么按写入权威分层.md) | [why-layer-by-write-authority](docs/why-layer-by-write-authority.md) | The layering argument and its load-bearing limits, with no platform dependency |
-| [定位分析](docs/定位分析.md) | [positioning-analysis](docs/positioning-analysis.md) | External research notes: where the differentiation lies, four rebuttals to answer, and an unciteable list |
 | [AWS 官方背书](docs/AWS官方背书.md) | [aws-alignment](docs/aws-alignment.md) | Each claim mapped to AWS documentation, with implementation locations and measured evidence |
 | [记忆产品横评](docs/记忆产品横评.md) | [memory-landscape](docs/memory-landscape.md) | AgentCore against mem0/Zep/Letta and the amplification effect |
 | [下一步演进](docs/下一步演进.md) | [roadmap](docs/roadmap.md) | Prioritized next evolution, including supersession |

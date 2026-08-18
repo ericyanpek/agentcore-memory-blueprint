@@ -13,6 +13,11 @@ build/
 infra/layer/python/*
 !infra/layer/python/.gitkeep
 
-# Handoff notes are internal working documents and are not published.
+# Internal working documents. This repository is public; these carry competitive
+# research, unverified citations, and internal judgement that is not meant to be
+# published. They stay on disk and out of version control.
 *HANDOFF*
 *handoff*
+docs/定位分析.md
+docs/positioning-analysis.md
+docs/superpowers/
