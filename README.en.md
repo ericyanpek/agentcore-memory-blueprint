@@ -156,23 +156,22 @@ Per-item severity: [实验报告](docs/实验报告.md) section 9 and
 Full comparison, with primary sources and unverified items, in
 **[memory-landscape](docs/memory-landscape.md)**.
 
-**Where AgentCore is behind, stated plainly**: retrieval is semantic only — no BM25, no
-hybrid, no reranking, and no choice of embedding model — while the factorial study shows
-retrieval method is the dominant variable in accuracy (20 points against 3–8 for write
-strategy). Invalidation is likewise absent: an AWS blog says consolidation marks outdated
-memories `INVALID`, but the API's memory record has no status field and streaming defines
-only create/update/delete — **AWS's own blog and API documentation disagree, and this
-blueprint follows the API documentation rather than depending on the behaviour**. Zep's
-Fact Invalidation is the clear leader on this axis.
+**The platform capabilities this blueprint depends on**: isolation is enforced
+platform-side through IAM condition keys such as `bedrock-agentcore:actorId` and
+`namespace`, rather than being expressed as an application parameter or a database column —
+that is the precondition for a governance boundary that lands on IAM. Metadata filtering is
+**pre-filtering** (filters applied before the vector search narrows the candidate set), with
+ten filter operators, `STRICTLY_CONSISTENT` metadata the application sets without LLM
+inference, and count-based pricing.
 
-**AgentCore's advantages are equally real**: isolation is enforced platform-side through
-IAM condition keys such as `bedrock-agentcore:actorId` and `namespace`, whereas scope in
-mem0, Zep, Letta, Databricks, Vertex, and Foundry is an application parameter or a
-database column — correct code isolates, incorrect code leaks. Databricks documents the
-limitation most honestly: "never let the model set it. The app service principal can read
-every scope." Add **pre-filtering** metadata (filters applied before the vector search
-narrows the candidate set), ten filter operators, `STRICTLY_CONSISTENT` metadata the
-application sets without LLM inference, and count-based pricing.
+**What currently has to be built on top**: retrieval is semantic, with no BM25, no hybrid,
+no reranking, and no choice of embedding model. A memory record carries no lifecycle status
+field, so invalidation and supersession semantics must be built — which is exactly item 4 of
+the [roadmap](docs/roadmap.md). One disagreement between official sources has to be stated:
+an AWS blog says consolidation marks outdated memories `INVALID`, but the API reference's
+memory record has no status field and streaming defines only create/update/delete —
+**where official sources disagree, this blueprint follows the API documentation rather than
+depending on the behaviour**.
 
 **The amplification is three mutual reinforcements**: pre-filtering puts governance
 conditions inside the retrieval path, so unapproved and superseded records never enter the
@@ -181,10 +180,11 @@ AgentCore's extraction quality irrelevant to the shared tier; and supersession v
 discrete status flag routes around the platform gap without adding the LLM contradiction
 adjudicator that the field has shown to be its least reliable component.
 
-**Practical guidance**: choose this for multi-user isolation and accountable team
-knowledge; choose mem0 or Zep for retrieval quality or exact keyword matching. The four
-layers allow both — the personal tier can change backends while the shared tier keeps IAM
-plus review.
+**When this applies**: what this blueprint solves is multi-user isolation and accountable
+team knowledge. If the primary goal is retrieval quality or exact keyword matching, that is
+a different problem, and this blueprint claims no advantage on that axis. The layering
+itself allows both — the personal tier's backend is replaceable, while the shared tier keeps
+IAM plus human review.
 
 ## What AWS Documents
 

@@ -118,26 +118,24 @@ Kinesis record streaming，以及控制面和数据面 PrivateLink；CDK L2 已�
 
 完整横评（含一手来源与未核实项）见**[记忆产品横评](docs/记忆产品横评.md)**。
 
-**AgentCore 不如竞品的地方，如实说**：检索只有语义，没有 BM25、hybrid 或重排，embedding
-模型也不暴露 —— 而因子实验显示检索方法是拉动准确率的主要变量（20 个点 vs 写入策略
-3–8 个点）。失效语义同样缺失：AWS 博客称 consolidation 会把过时记忆标为 `INVALID`，但
-API 里的记忆记录没有任何状态字段，流式事件只有增/改/删 —— **AWS 自己的博客与 API 文档
-不一致，本蓝图按 API 文档行事，不依赖该行为**。Zep 的 Fact Invalidation 是这一项上明确
-领先的实现。
+**本蓝图依赖的平台能力**：隔离由 `bedrock-agentcore:actorId`/`namespace` 等 IAM 条件键在
+平台侧强制，而不是由应用层参数或数据库列表达 —— 这是治理边界能落到 IAM 上的前提。元数据
+过滤是**预过滤**（在向量检索前缩小候选集）、10 个操作符、`STRICTLY_CONSISTENT` 元数据可由
+应用直接设定不经 LLM 推断，以及 count-based 计费。
 
-**AgentCore 的优势也很实在**：隔离由 `bedrock-agentcore:actorId`/`namespace` 等 IAM
-条件键在平台侧强制，而 mem0、Zep、Letta、Databricks、Vertex、Foundry 的 scope 都是应用层
-参数或数据库列 —— 写对了隔离，写错了泄露。Databricks 文档把这条限制说得最诚实：
-"never let the model set it. The app service principal can read every scope."
-此外元数据过滤是**预过滤**（在向量检索前缩小候选集）、10 个操作符、
-`STRICTLY_CONSISTENT` 元数据可由应用直接设定不经 LLM 推断，以及 count-based 计费。
+**当前需要自建的部分**：检索为语义检索，不提供 BM25、hybrid 或重排，embedding 模型也不暴露。
+记忆记录没有生命周期状态字段，因此失效与取代语义必须自建 —— 这正是[下一步演进](docs/下一步演进.md)
+第 4 项的内容。这里有一处必须写明的官方来源分歧：AWS 博客称 consolidation 会把过时记忆标为
+`INVALID`，但 API 参考里的记忆记录没有任何状态字段，流式事件只有增/改/删 —— **官方来源之间
+不一致时，本蓝图按 API 文档行事，不依赖该行为**。
 
 **放大效应在于三处相互增强**：治理条件因预过滤而进入检索路径本身 —— 未批准与被取代的
 记录不参与相似度竞争，而非事后筛除；逐字入库使 AgentCore 的抽取质量在共享层完全不构成
 风险；取代机制用离散状态标志实现，绕开平台空白，且不引入业内公认最不可靠的 LLM 矛盾裁决。
 
-**务实结论**：需要多用户隔离与团队知识问责，选这套；检索质量优先或需关键词精确匹配，
-选 mem0/Zep。四层分层允许两者并存 —— 个人层可换后端，共享层保留 IAM + 审核。
+**适用判断**：本蓝图解决的是多用户隔离与团队知识问责。若首要目标是检索质量或关键词精确
+匹配，那是另一个问题，本蓝图不声称在那条轴上更优。分层本身允许两者并存 —— 个人层的后端是
+可替换的，共享层保留 IAM 加人工审核即可。
 
 ## AWS 官方依据
 
