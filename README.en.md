@@ -104,6 +104,47 @@ counter-evidence in [design rationale](docs/design-rationale.md):
 > Review covers the **team tier only**. Personal long-term memory and short-term events
 > are not reviewed — IAM bounds their blast radius, but isolation is not review.
 
+## Scope and Limitations
+
+This is a POC. The boundaries below are deliberate:
+
+- **Personal isolation depends on the path.** The desktop path is IAM-enforced; the
+  Runtime role serves every user and relies on application-level actor ownership — the
+  most significant open item.
+- **The policy gate reads declared labels**, not content; it does not inspect for
+  credentials or personal data.
+- **The proposal criteria are stated; the trigger is still missing.** The five
+  `category` semantics and what should not be proposed are now in the tool description,
+  but no hook evaluates a completed turn for anything worth proposing, so proposing
+  still depends on the user asking. With no proposals, the governance path idles.
+- **Approved facts have no supersession path, and no expiry backstop.** Shared records are
+  created directly by `BatchCreateMemoryRecords` with no source event, so
+  `eventExpiryDuration` — which applies per event — never reaches them, and
+  `MemoryRecordCreateInput` carries no expiry field. A statement that becomes false stays
+  retrievable indefinitely, carrying a `review_status=approved` pre-filter label that makes
+  it a first-class retrieval result. Record-level removal exists only through an explicit
+  `DeleteMemoryRecord` / `BatchDeleteMemoryRecords`.
+- **Governance properties are validated; answer quality is not measured.**
+- **The gate cannot deduplicate.** Two of the four shared records in the experiment are the
+  same sentence, scoring an identical 0.6626 ([实验报告](docs/实验报告.md) check 13). A gate
+  judges whether a statement qualifies; it does not judge whether the tier already holds it,
+  and the shared tier's entire value is its signal-to-noise ratio.
+- **Team knowledge that qualifies may be extremely rare.** A study of memory promotion gates
+  reports internal false promotion falling from 0.371 to 0.032, yet across 133 external
+  high-impact candidates human adjudication found **none** safe for automatic promotion
+  ([arXiv:2607.02579](https://arxiv.org/abs/2607.02579)). If that holds, a persistently
+  empty review queue may be the real production rate rather than a broken path.
+- **Reviewers habituate, and the drift has a direction.** A study of 400 repeat reviewers
+  across 11,429 AI-agent pull request reviews reports approval rates rising from 30.1% to
+  36.8%, a 14.5 percentage point increase within the same reviewer across experience
+  quantiles, alongside 22% fewer inline comments
+  ([arXiv:2606.22721](https://arxiv.org/abs/2606.22721)). A human gate's effectiveness
+  decays with use, and this project does not measure that decay.
+
+Per-item severity: [实验报告](docs/实验报告.md) section 9 and
+[桌面客户端集成设计](docs/桌面客户端集成设计.md) section 11; remediation plan:
+[roadmap](docs/roadmap.md).
+
 ## Against the Field
 
 Full comparison, with primary sources and unverified items, in
@@ -305,28 +346,3 @@ The Knowledge Base ID is an integration parameter, not a resource this stack cre
 real Knowledge Base needs an explicit source, chunking strategy, vector store, ingestion
 job, and retrieval validation, and those decisions should not hide inside a memory demo.
 
-## Scope and Limitations
-
-This is a POC. The boundaries below are deliberate:
-
-- **Personal isolation depends on the path.** The desktop path is IAM-enforced; the
-  Runtime role serves every user and relies on application-level actor ownership — the
-  most significant open item.
-- **The policy gate reads declared labels**, not content; it does not inspect for
-  credentials or personal data.
-- **The proposal criteria are stated; the trigger is still missing.** The five
-  `category` semantics and what should not be proposed are now in the tool description,
-  but no hook evaluates a completed turn for anything worth proposing, so proposing
-  still depends on the user asking. With no proposals, the governance path idles.
-- **Approved facts have no supersession path, and no expiry backstop.** Shared records are
-  created directly by `BatchCreateMemoryRecords` with no source event, so
-  `eventExpiryDuration` — which applies per event — never reaches them, and
-  `MemoryRecordCreateInput` carries no expiry field. A statement that becomes false stays
-  retrievable indefinitely, carrying a `review_status=approved` pre-filter label that makes
-  it a first-class retrieval result. Record-level removal exists only through an explicit
-  `DeleteMemoryRecord` / `BatchDeleteMemoryRecords`.
-- **Governance properties are validated; answer quality is not measured.**
-
-Per-item severity: [实验报告](docs/实验报告.md) section 9 and
-[桌面客户端集成设计](docs/桌面客户端集成设计.md) section 11; remediation plan:
-[roadmap](docs/roadmap.md).
