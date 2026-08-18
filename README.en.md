@@ -8,6 +8,19 @@ When several users share one agent, personal memory stays strictly isolated whil
 valuable experience becomes team knowledge only after human review. An AWS reference
 implementation on Amazon Bedrock AgentCore Memory.
 
+What is scarce in an enterprise is not memory storage but the moment an experience gets
+written down. The difficulty with a Knowledge Base or a Skills directory was never storage
+or retrieval — it is that **nothing naturally triggers the write**. So what this project
+governs is the shared tier's **write boundary**: structured proposal → policy gate → human
+review → verbatim storage → attributable and revocable. A Knowledge Base and Skills are not
+its competitors; they are downstream of it.
+
+> **Load-bearing limit: memory governance is load-bearing within the memory domain, not
+> across the whole agent stack.** Agent effectiveness belongs to an observe → evaluate →
+> optimize loop, and governed memory is one input to that loop. Governance optimizes blast
+> radius, attributability, and revocability, not single-answer correctness — this project
+> makes no claim that governance improves answer quality.
+
 **Start with the results**: [experiment report](docs/实验报告.md) (a real run, 14
 checks) · [desktop integration design](docs/desktop-client-integration.md) (how Claude
 Code and Codex share one cloud memory)
@@ -46,9 +59,18 @@ and [pricing page](https://aws.amazon.com/bedrock/agentcore/pricing/).
 
 ## What Is Distinctive
 
-Memory is a **governed asset with an authority level**, not a smarter vector store.
-Four design judgments; reasoning and counter-evidence in
-[design rationale](docs/design-rationale.md):
+Memory is a **governed asset with an authority level**, not a smarter vector store. Three
+sentences, none of which depend on a platform (full argument in
+[why-layer-by-write-authority](docs/why-layer-by-write-authority.md)): layers are divided by
+**who is entitled to change them** rather than by episodic/semantic, which turns conflict
+resolution from a semantic judgment into a table lookup; retrieval precedence is a **total
+order** carried into the context, replacing "which memories are relevant" (no answer) with
+"which authority wins" (one answer); and the shared tier is a **staging area for knowledge
+assets** — more governed than a vector store, less friction than authoring a document, and
+promoted upward once stable.
+
+The four design judgments below record the implementation trade-offs; reasoning and
+counter-evidence in [design rationale](docs/design-rationale.md):
 
 - **Approved text is stored verbatim.** Approval calls
   `BatchCreateMemoryRecords` directly, so `content.text` is the exact string the
