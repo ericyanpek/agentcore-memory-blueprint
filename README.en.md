@@ -273,6 +273,11 @@ by the stack → subscribe to the encrypted SNS topic → configure the runtime 
 stack outputs (event bus name, personal/shared Memory IDs) → propose and approve a
 candidate per the [runbook](docs/demo-runbook.md).
 
+The shared Memory's `indexedKeys` are fixed at `CreateMemory` time — they cannot be added
+or removed and are not backfilled — and the resource is `RETAIN`. The `superseded_by` key
+that supersession needs is therefore declared ahead of use, but an already-deployed
+resource does not gain it; only a newly created Memory carries it.
+
 The Knowledge Base ID is an integration parameter, not a resource this stack creates: a
 real Knowledge Base needs an explicit source, chunking strategy, vector store, ingestion
 job, and retrieval validation, and those decisions should not hide inside a memory demo.
