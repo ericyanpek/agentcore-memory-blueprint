@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import pathlib
 import re
+import subprocess
 import sys
 
 
@@ -43,7 +44,6 @@ PAIRS = [
     ("experiments/README.md", "experiments/README.en.md"),
     ("experiments/observability-evidence.md",
      "experiments/observability-evidence.en.md"),
-    ("HANDOFF_REPORT.md", "HANDOFF_REPORT.en.md"),
     ("skills/validate-revenue-metric/SKILL.md",
      "skills/validate-revenue-metric/SKILL.zh-CN.md"),
 ]
@@ -98,6 +98,15 @@ def doc_links(path: pathlib.Path, text: str) -> list[str]:
         if not (path.parent / target).is_file():
             broken.append(target)
     return broken
+
+
+def is_tracked_by_git(relative: str) -> bool:
+    result = subprocess.run(
+        ["git", "ls-files", "--error-unmatch", "--", relative],
+        cwd=ROOT,
+        capture_output=True,
+    )
+    return result.returncode == 0
 
 
 def compare(primary: pathlib.Path, secondary: pathlib.Path) -> list[str]:
@@ -160,13 +169,17 @@ def main() -> int:
         else:
             print(f"ok       {primary_name} <-> {secondary_name}")
 
-    # Catch documents that exist but were never added to PAIRS.
+    # Catch documents that exist but were never added to PAIRS. Only published files
+    # carry a translation duty, so ask git rather than keeping a second list of
+    # exceptions here: an untracked or ignored file (a handoff note, a scratch draft)
+    # is not part of the repository and cannot drift in it.
     tracked = paired | UNPAIRED
     for path in sorted(ROOT.glob("docs/*.md")) + sorted(ROOT.glob("*.md")):
         relative = path.relative_to(ROOT).as_posix()
-        if relative not in tracked:
-            print(f"UNPAIRED {relative}: not in PAIRS and not declared unpaired")
-            failures += 1
+        if relative in tracked or not is_tracked_by_git(relative):
+            continue
+        print(f"UNPAIRED {relative}: not in PAIRS and not declared unpaired")
+        failures += 1
 
     print()
     print(

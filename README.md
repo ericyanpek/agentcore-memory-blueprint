@@ -29,7 +29,6 @@
 | [跨服务可观测性蓝图](docs/OBSERVABILITY_BLUEPRINT.md) | [observability blueprint](docs/OBSERVABILITY_BLUEPRINT.en.md) | 服务遥测、ADOT/OTEL、实验取证和长期分析归档 |
 | [企业实验路线](experiments/README.md) | [enterprise experiment path](experiments/README.en.md) | E00–E07 递进实验、负向测试、成本和清理 |
 | [官方样例目录](docs/AWS_SAMPLE_CATALOG.md) | [AWS sample catalog](docs/AWS_SAMPLE_CATALOG.en.md) | 固定提交、能力映射、生产差距和样例漂移 |
-| [Handoff 报告](HANDOFF_REPORT.md) | [handoff report](HANDOFF_REPORT.en.md) | 未验证假设、跨服务待统一项和后续责任 |
 
 **事实快照（复核于 2026-08-04）**：AgentCore Memory 当前在 15 个商业 Region 可用；
 当前企业相关能力包括长期记录 batch CRUD、indexed/strictly-consistent metadata、

@@ -12,3 +12,7 @@ build/
 .playwright-mcp/
 infra/layer/python/*
 !infra/layer/python/.gitkeep
+
+# Handoff notes are internal working documents and are not published.
+*HANDOFF*
+*handoff*

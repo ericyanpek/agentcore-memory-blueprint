@@ -39,7 +39,6 @@ into assignable responsibilities, testable controls, and reproducible experiment
 | [跨服务可观测性蓝图](docs/OBSERVABILITY_BLUEPRINT.md) | [observability blueprint](docs/OBSERVABILITY_BLUEPRINT.en.md) | Service telemetry, ADOT/OTEL, experiment evidence, and long-term analytics |
 | [企业实验路线](experiments/README.md) | [enterprise experiment path](experiments/README.en.md) | Progressive E00–E07 experiments, negative tests, cost, and cleanup |
 | [官方样例目录](docs/AWS_SAMPLE_CATALOG.md) | [AWS sample catalog](docs/AWS_SAMPLE_CATALOG.en.md) | Pinned commit, capability mapping, production gaps, and sample drift |
-| [Handoff 报告](HANDOFF_REPORT.md) | [handoff report](HANDOFF_REPORT.en.md) | Unverified assumptions, cross-service alignment, and next ownership |
 
 **Fact snapshot (verified 2026-08-04)**: AgentCore Memory is available in 15 commercial
 Regions. Current enterprise-relevant capabilities include long-term record batch CRUD,
