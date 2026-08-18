@@ -23,6 +23,7 @@ describe("MemoryGovernanceStack", () => {
         { Key: "category", Type: "STRING" },
         { Key: "review_status", Type: "STRING" },
         { Key: "promotion_hint", Type: "STRING" },
+        { Key: "superseded_by", Type: "STRING" },
       ],
     });
   });
