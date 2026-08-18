@@ -122,9 +122,13 @@ gives them a specific insertion point.
 
 This is the largest capability gap and the one with no partial implementation.
 
-**Current behaviour.** An approved shared record is immutable and effectively
-permanent within the 90-day resource expiry. There is no way to mark it as no longer
-true. If the curated-churn-view constraint that the experiment approves is corrected
+**Current behaviour.** An approved shared record is immutable and **permanent**. This
+paragraph previously said "within the 90-day resource expiry"; that backstop does not
+exist. `eventExpiryDuration` applies per event at write time, and a shared record created
+directly by `BatchCreateMemoryRecords` has no source event, while
+`MemoryRecordCreateInput` carries no expiry field. Record-level removal exists only
+through an explicit `DeleteMemoryRecord` / `BatchDeleteMemoryRecords`. There is no way to
+mark a record as no longer true. If the curated-churn-view constraint that the experiment approves is corrected
 next quarter, the old record remains retrievable and indistinguishable from a current
 one. Record-level TTL does not solve this: an expiring record and a fresh record rank
 identically until the moment it disappears.
@@ -222,10 +226,19 @@ record lifecycle state, and must not be cited as invalidation.)
 `src/handlers/publish_shared.py`, `infra/lib/memory-governance-stack.ts` (the
 publisher role needs `BatchUpdateMemoryRecords` under the same exact-namespace
 condition), `dashboard/` (surface superseded records distinctly).
+`superseded_by` is already declared as an indexed key
+(`infra/lib/memory-governance-stack.ts`), because indexed keys are fixed at
+`CreateMemory` time and cannot be added afterwards.
 
 ---
 
 ## 5. When to propose, and what qualifies — severity: high
+
+**This item is a precondition of the argument, not a backlog entry.** The approval chain is
+complete while the capture trigger is missing, which means the bottleneck was never the
+middle segment. This repository is its own specimen: every candidate in the experiment
+report was produced by a script, and the `skills/` directory has only ever been added to,
+never modified.
 
 **Current behaviour.** The proposal contract itself is complete: five `category`
 values, confidence, privacy classification, `promotion_hint`, and an immutable
