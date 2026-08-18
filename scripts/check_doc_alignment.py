@@ -33,6 +33,7 @@ PAIRS = [
     ("docs/AWS官方背书.md", "docs/aws-alignment.md"),
     ("docs/桌面客户端集成设计.md", "docs/desktop-client-integration.md"),
     ("docs/为什么按写入权威分层.md", "docs/why-layer-by-write-authority.md"),
+    ("docs/定位分析.md", "docs/positioning-analysis.md"),
     ("docs/ENTERPRISE_GOVERNANCE_BLUEPRINT.md",
      "docs/ENTERPRISE_GOVERNANCE_BLUEPRINT.en.md"),
     ("docs/CONTROL_BASELINE.md", "docs/CONTROL_BASELINE.en.md"),
