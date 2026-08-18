@@ -244,7 +244,11 @@ Knowledge Base ID 是集成参数，非本堆栈创建的资源：真实可用�
 - **提案的判断标准已给出，触发时机仍缺。** 五个 `category` 的语义与"不该提案什么"已写入
   工具描述，但没有 hook 在每轮后评估是否值得提案，因此提案仍依赖用户显式要求 —— 若无人
   提案，治理链路空转。
-- **已批准事实没有取代通路**，变为假的陈述仍可检索至资源过期。
+- **已批准事实没有取代通路，且没有过期兜底。** 共享记录由
+  `BatchCreateMemoryRecords` 直接创建，没有对应的 source event，因此按 event 生效的
+  `eventExpiryDuration` 碰不到它，`MemoryRecordCreateInput` 上也没有任何 expiry 字段 ——
+  变为假的陈述永久可检索，且带 `review_status=approved` 预过滤标签，在检索里是一等公民。
+  记录级移除只有显式 `DeleteMemoryRecord` / `BatchDeleteMemoryRecords`。
 - **已验证的是治理属性，未测量回答质量。**
 
 逐项严重度见[实验报告](docs/实验报告.md)第九章与

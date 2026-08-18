@@ -290,8 +290,13 @@ This is a POC. The boundaries below are deliberate:
   `category` semantics and what should not be proposed are now in the tool description,
   but no hook evaluates a completed turn for anything worth proposing, so proposing
   still depends on the user asking. With no proposals, the governance path idles.
-- **Approved facts have no supersession path**; a statement that becomes false stays
-  retrievable until the resource expiry.
+- **Approved facts have no supersession path, and no expiry backstop.** Shared records are
+  created directly by `BatchCreateMemoryRecords` with no source event, so
+  `eventExpiryDuration` — which applies per event — never reaches them, and
+  `MemoryRecordCreateInput` carries no expiry field. A statement that becomes false stays
+  retrievable indefinitely, carrying a `review_status=approved` pre-filter label that makes
+  it a first-class retrieval result. Record-level removal exists only through an explicit
+  `DeleteMemoryRecord` / `BatchDeleteMemoryRecords`.
 - **Governance properties are validated; answer quality is not measured.**
 
 Per-item severity: [实验报告](docs/实验报告.md) section 9 and
