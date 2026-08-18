@@ -128,9 +128,9 @@ exist. `eventExpiryDuration` applies per event at write time, and a shared recor
 directly by `BatchCreateMemoryRecords` has no source event, while
 `MemoryRecordCreateInput` carries no expiry field. Record-level removal exists only
 through an explicit `DeleteMemoryRecord` / `BatchDeleteMemoryRecords`. There is no way to
-mark a record as no longer true. If the curated-churn-view constraint that the experiment approves is corrected
-next quarter, the old record remains retrievable and indistinguishable from a current
-one. Record-level TTL does not solve this: an expiring record and a fresh record rank
+mark a record as no longer true. If the curated-churn-view constraint that the experiment
+approves is corrected next quarter, the old record remains retrievable and
+indistinguishable from a current one. Record-level TTL does not solve this: an expiring record and a fresh record rank
 identically until the moment it disappears.
 
 **What the platform provides.** This is implementable without leaving AgentCore:
