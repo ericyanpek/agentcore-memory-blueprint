@@ -235,9 +235,10 @@ official source backs these four; they should not be presented as endorsed.
 
 > Two notes on citation discipline: the `INVALID` status appears only in an AWS blog and
 > **not in the developer guide or API reference** (see "Against the Field" above) — where
-> official sources disagree, this blueprint follows the API documentation. A `strategyId`
-> condition key appears in secondary sources but could not be confirmed on the official
-> Service Authorization Reference page, so it is not cited.
+> official sources disagree, this blueprint follows the API documentation. The `strategyId`
+> condition key was previously recorded as unconfirmed; it is now confirmed on the official
+> Service Authorization Reference page (`bedrock-agentcore:strategyId`, rechecked
+> 2026-08-18), and that reservation is withdrawn.
 
 ## Architecture
 

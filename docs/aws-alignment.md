@@ -152,8 +152,10 @@ Condition keys confirmed on that page: **`bedrock-agentcore:actorId`** (on `Crea
 **`bedrock-agentcore:namespace`** (on `BatchCreateMemoryRecords` and
 `BatchUpdateMemoryRecords`), and **`bedrock-agentcore:sessionId`** (on `CreateEvent`).
 
-This project depends on the first two. Secondary sources also mention a `strategyId`
-condition key, but it **could not be confirmed** on that official page, so it is not cited.
+This project depends on the first two. The `strategyId` condition key was previously
+recorded as unconfirmed on that official page; **a recheck on 2026-08-18 confirmed it**
+(`bedrock-agentcore:strategyId`, "Filters access by Memory Strategy Id"), so that
+reservation is withdrawn. This project does not currently use it.
 
 **"Memory organization in AgentCore Memory"**
 https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-organization.html

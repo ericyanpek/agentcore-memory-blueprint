@@ -142,8 +142,9 @@ https://docs.aws.amazon.com/service-authorization/latest/reference/list_bedrock-
 **`bedrock-agentcore:namespace`**（用于 `BatchCreateMemoryRecords`、
 `BatchUpdateMemoryRecords`）、**`bedrock-agentcore:sessionId`**（用于 `CreateEvent`）。
 
-本项目依赖的正是前两个。另有二手来源提到 `strategyId` 条件键，但在该官方页面上**未能
-确认**，故不引用。
+本项目依赖的正是前两个。`strategyId` 条件键此前记为在该官方页面上"未能确认"，
+**2026-08-18 复核时已确认存在**（`bedrock-agentcore:strategyId`，Filters access by Memory
+Strategy Id），该保留意见撤回。本项目目前未使用它。
 
 **《Memory organization in AgentCore Memory》**
 https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-organization.html

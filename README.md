@@ -182,8 +182,9 @@ Guardrails 与 PII 过滤、Level 4 的 HMAC 逐读校验。即**治理维度很
 
 > 引用纪律上的两点：`INVALID` 状态只见于 AWS 博客，**开发者指南与 API 文档中查不到**
 > （详见上文"与业内产品的关系"）—— 官方来源之间
-> 存在不一致时，本蓝图按 API 文档行事。另有二手来源提到 `strategyId` 条件键，在官方
-> Service Authorization Reference 页面未能确认，故不引用。
+> 存在不一致时，本蓝图按 API 文档行事。`strategyId` 条件键此前记为"未能确认"，现已在官方
+> Service Authorization Reference 页面确认存在（`bedrock-agentcore:strategyId`，
+> 复核于 2026-08-18），该保留意见撤回。
 
 ## 架构
 

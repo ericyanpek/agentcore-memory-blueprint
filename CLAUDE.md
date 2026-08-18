@@ -94,8 +94,14 @@ Claims in the documentation carry sources, and the sources have been checked one
 time. When you add or move a citation:
 
 - Fetch the page and confirm the quote appears there. Second-hand summaries have already
-  produced three errors in this repo (a wrong benchmark attribution, an unverifiable IAM
-  condition key, and a venue that the source never states).
+  produced three errors in this repo (a wrong benchmark attribution, an IAM condition key
+  recorded as unverifiable, and a venue that the source never states).
+- **Recheck the page before writing that something does not exist.** Two of those errors were
+  negative claims that turned out to be wrong: `bedrock-agentcore:strategyId` is in the
+  Service Authorization Reference after all, and an indexed key *can* be added later via
+  `UpdateMemory` — the actual constraint is that it can never be removed. A negative claim
+  needs a fetched page just as much as a positive one, and it decays faster, because the
+  service ships.
 - An arXiv ID is not a title. Cite the paper's actual title; method names such as MINJA or
   GhostWriter are not titles.
 - Distinguish injection success from end-to-end attack success, and vendor-published
