@@ -227,8 +227,11 @@ record lifecycle state, and must not be cited as invalidation.)
 publisher role needs `BatchUpdateMemoryRecords` under the same exact-namespace
 condition), `dashboard/` (surface superseded records distinctly).
 `superseded_by` is already declared as an indexed key
-(`infra/lib/memory-governance-stack.ts`), because indexed keys are fixed at
-`CreateMemory` time and cannot be added afterwards.
+(`infra/lib/memory-governance-stack.ts`): an indexed key **can** be added later
+(`UpdateMemory` with `--add-indexed-keys`) but never removed, and adding one does not
+backfill — only records written or updated after the key exists are indexed for it, so
+declaring it early keeps records approved in the meantime filterable once supersession
+ships.
 
 ---
 

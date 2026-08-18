@@ -339,10 +339,12 @@ by the stack → subscribe to the encrypted SNS topic → configure the runtime 
 stack outputs (event bus name, personal/shared Memory IDs) → propose and approve a
 candidate per the [runbook](docs/demo-runbook.md).
 
-The shared Memory's `indexedKeys` are fixed at `CreateMemory` time — they cannot be added
-or removed and are not backfilled — and the resource is `RETAIN`. The `superseded_by` key
-that supersession needs is therefore declared ahead of use, but an already-deployed
-resource does not gain it; only a newly created Memory carries it.
+An indexed key can be added later (`UpdateMemory` with `--add-indexed-keys`) but **never
+removed, and adding one does not backfill** — only records written or updated after the key
+exists are indexed for it. The `superseded_by` key that supersession needs is therefore
+declared ahead of use, so records approved between now and then remain filterable once it
+lands. An already-deployed resource needs one `UpdateMemory` call to gain the key, since
+`cdk deploy` will not replace a `RETAIN`ed Memory.
 
 The Knowledge Base ID is an integration parameter, not a resource this stack creates: a
 real Knowledge Base needs an explicit source, chunking strategy, vector store, ingestion

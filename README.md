@@ -277,9 +277,10 @@ npx cdk deploy \
 输出配置运行时（事件总线名、个人/共享 Memory ID）→ 按[演示手册](docs/演示手册.md)提交并
 审批一个候选项。
 
-共享 Memory 的 `indexedKeys` 在 `CreateMemory` 时固定，不可增删、不回填，而该资源是
-`RETAIN` 的。取代机制所需的 `superseded_by` 已提前声明，但已部署的资源不会因此获得该键 ——
-只有新建的 Memory 资源才带上它。
+`indexedKeys` 可以后加（`UpdateMemory` 的 `--add-indexed-keys`），但**不可删除，且不回填** ——
+只有键存在之后写入或更新的记录才会被索引。因此取代机制所需的 `superseded_by` 提前声明：
+在它被实现之前批准的记录，届时仍可被过滤。已部署的资源需执行一次 `UpdateMemory` 才会获得
+该键，`cdk deploy` 不会替换被 `RETAIN` 保留的 Memory。
 
 Knowledge Base ID 是集成参数，非本堆栈创建的资源：真实可用的 Knowledge Base 需要明确的
 数据源、分块策略、向量存储、摄取作业与检索验证，这些决策不应隐藏在记忆演示里。

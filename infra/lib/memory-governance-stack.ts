@@ -83,10 +83,11 @@ export class MemoryGovernanceStack extends Stack {
     const sharedMemoryResource = sharedMemory.node.findChild(
       "Memory",
     ) as agentcore.CfnMemory;
-    // Indexed keys are fixed at CreateMemory time and cannot be added later, and this
-    // resource is RETAIN, so `superseded_by` is declared before supersession is
-    // implemented (docs/roadmap.md item 4). An already-deployed resource does not gain
-    // the key from this change; it reaches only a newly created Memory.
+    // An indexed key can be added later (UpdateMemory --add-indexed-keys) but never
+    // removed, and adding one does not backfill: only records written after the key
+    // exists are indexed for it. `superseded_by` is therefore declared before
+    // supersession is implemented (docs/roadmap.md item 4), so that records approved
+    // between now and then are filterable once it is.
     sharedMemoryResource.indexedKeys = [
       { key: "project_id", type: "STRING" },
       { key: "category", type: "STRING" },
