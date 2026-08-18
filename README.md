@@ -154,9 +154,9 @@ flowchart LR
     R --> SF
     SF --> SM["共享 AgentCore Memory<br/>actor=项目 ID"]
     SM --> A
-    SF --> P["晋升事件"]
-    P --> KB["托管 Knowledge Base<br/>权威文档"]
-    P --> SK["Git 中的团队 Skills<br/>可执行流程"]
+    SF --> P["晋升事件 → 晋升队列"]
+    P --> KB["托管 Knowledge Base<br/>权威文档（人工摄取）"]
+    P --> SK["Git 中的团队 Skills<br/>可执行流程（人工评审）"]
 ```
 
 刻意使用**两个 Memory 资源**：`PersonalMemory` 由运行时写入，actor 为已认证用户 ID；

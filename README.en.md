@@ -188,9 +188,9 @@ flowchart LR
     R --> SF
     SF --> SM["Shared AgentCore Memory<br/>actor=project ID"]
     SM --> A
-    SF --> P["Promotion event"]
-    P --> KB["Managed Knowledge Base<br/>authoritative documents"]
-    P --> SK["Team Skills in Git<br/>executable procedures"]
+    SF --> P["Promotion event → promotion queue"]
+    P --> KB["Managed Knowledge Base<br/>authoritative documents (manual ingestion)"]
+    P --> SK["Team Skills in Git<br/>executable procedures (manual review)"]
 ```
 
 Two Memory resources, deliberately: `PersonalMemory` is written by the runtime with the
