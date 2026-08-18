@@ -12,6 +12,38 @@ implementation on Amazon Bedrock AgentCore Memory.
 checks) · [desktop integration design](docs/desktop-client-integration.md) (how Claude
 Code and Codex share one cloud memory)
 
+## Enterprise Governance
+
+The repository also provides a governance layer for enterprise architecture review,
+release gates, and audit evidence. The existing README, architecture documents, and
+experiment report describe the reference implementation; the documents below turn it
+into assignable responsibilities, testable controls, and reproducible experiments:
+
+| Chinese (primary) | English | Purpose |
+|---|---|---|
+| [企业治理蓝图](docs/ENTERPRISE_GOVERNANCE_BLUEPRINT.md) | [enterprise governance blueprint](docs/ENTERPRISE_GOVERNANCE_BLUEPRINT.en.md) | Multi-account, Region, tenant, identity, network, data, operations, and cross-service contracts |
+| [最低控制基线](docs/CONTROL_BASELINE.md) | [control baseline](docs/CONTROL_BASELINE.en.md) | MUST/SHOULD/MAY controls, evidence, release gates, and exception template |
+| [跨服务可观测性蓝图](docs/OBSERVABILITY_BLUEPRINT.md) | [observability blueprint](docs/OBSERVABILITY_BLUEPRINT.en.md) | Service telemetry, ADOT/OTEL, experiment evidence, and long-term analytics |
+| [企业实验路线](experiments/README.md) | [enterprise experiment path](experiments/README.en.md) | Progressive E00–E07 experiments, negative tests, cost, and cleanup |
+| [官方样例目录](docs/AWS_SAMPLE_CATALOG.md) | [AWS sample catalog](docs/AWS_SAMPLE_CATALOG.en.md) | Pinned commit, capability mapping, production gaps, and sample drift |
+| [Handoff 报告](HANDOFF_REPORT.md) | [handoff report](HANDOFF_REPORT.en.md) | Unverified assumptions, cross-service alignment, and next ownership |
+
+**Fact snapshot (verified 2026-08-04)**: AgentCore Memory is available in 15 commercial
+Regions. Current enterprise-relevant capabilities include long-term record batch CRUD,
+indexed and strictly consistent metadata, Kinesis record streaming, control/data
+PrivateLink, and stable CDK L2 constructs (see
+[Release Notes](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html)).
+Short-term event retention ranges from 7 to 365 days; the default limit is 150
+Memory resources per account per Region and 6 strategies per resource; `CreateEvent`
+defaults to 200 TPS, conversational messages are limited to 5 TPS per actor and session,
+and `RetrieveMemoryRecords` defaults to 30 TPS. Pricing is USD 0.25 per 1,000 new events;
+monthly long-term storage is USD 0.75 per 1,000 records for built-in strategies or USD
+0.25 for override/self-managed strategies (plus model usage); retrieval is USD 0.50 per
+1,000 calls. Regions, quotas, and prices change, so production decisions must recheck the
+official [Region table](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agentcore-regions.html),
+[quota page](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/bedrock-agentcore-limits.html),
+and [pricing page](https://aws.amazon.com/bedrock/agentcore/pricing/).
+
 ## What Is Distinctive
 
 Memory is a **governed asset with an authority level**, not a smarter vector store.

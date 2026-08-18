@@ -8,6 +8,34 @@
 **想先看结论**：[实验报告](docs/实验报告.md)（真实运行 + 14 项检查）·
 [桌面客户端集成设计](docs/桌面客户端集成设计.md)（Claude Code / Codex 如何共用云端记忆）
 
+## 企业治理入口
+
+本仓库同时提供一套面向企业架构评审、发布门禁和审计取证的治理层。现有 README、架构文档
+和实验报告描述参考实现本身；下列文档把它提升为可分配责任、可验证控制和可复现实验：
+
+| 中文（主） | English | 用途 |
+|---|---|---|
+| [企业治理蓝图](docs/ENTERPRISE_GOVERNANCE_BLUEPRINT.md) | [enterprise governance blueprint](docs/ENTERPRISE_GOVERNANCE_BLUEPRINT.en.md) | 多账户、Region、租户、身份、网络、数据、运营和跨服务契约 |
+| [最低控制基线](docs/CONTROL_BASELINE.md) | [control baseline](docs/CONTROL_BASELINE.en.md) | MUST/SHOULD/MAY 控制、证据、发布门禁和例外模板 |
+| [跨服务可观测性蓝图](docs/OBSERVABILITY_BLUEPRINT.md) | [observability blueprint](docs/OBSERVABILITY_BLUEPRINT.en.md) | 服务遥测、ADOT/OTEL、实验取证和长期分析归档 |
+| [企业实验路线](experiments/README.md) | [enterprise experiment path](experiments/README.en.md) | E00–E07 递进实验、负向测试、成本和清理 |
+| [官方样例目录](docs/AWS_SAMPLE_CATALOG.md) | [AWS sample catalog](docs/AWS_SAMPLE_CATALOG.en.md) | 固定提交、能力映射、生产差距和样例漂移 |
+| [Handoff 报告](HANDOFF_REPORT.md) | [handoff report](HANDOFF_REPORT.en.md) | 未验证假设、跨服务待统一项和后续责任 |
+
+**事实快照（复核于 2026-08-04）**：AgentCore Memory 当前在 15 个商业 Region 可用；
+当前企业相关能力包括长期记录 batch CRUD、indexed/strictly-consistent metadata、
+Kinesis record streaming，以及控制面和数据面 PrivateLink；CDK L2 已进入稳定版（以
+[Release Notes](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html)
+为准）。
+短期事件保留范围为 7–365 天；每个 Region、每个账户默认最多 150 个 Memory 资源，每个资源
+最多 6 个策略；`CreateEvent` 默认配额为 200 TPS，单 actor + session 的会话消息为 5 TPS，
+`RetrieveMemoryRecords` 为 30 TPS。定价为每 1,000 个新事件 0.25 美元；长期记录按月每
+1,000 条 0.75 美元（内置策略）或 0.25 美元（override/自管策略，模型费用另计）；
+每 1,000 次检索 0.50 美元。Region、配额和价格会变化，生产决策必须重新核验官方
+[Region 表](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agentcore-regions.html)、
+[配额页](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/bedrock-agentcore-limits.html)
+与[定价页](https://aws.amazon.com/bedrock/agentcore/pricing/)。
+
 ## 核心特点
 
 记忆是**带权威等级的受治理资产**，不是一个更聪明的向量库。四条设计判断，依据与反向证据
