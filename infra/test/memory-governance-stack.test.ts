@@ -188,4 +188,21 @@ describe("MemoryGovernanceStack", () => {
       "method.response.header.Access-Control-Allow-Origin\":\"'*'\"",
     );
   });
+
+  test("routes promotion proposals to a durable queue", () => {
+    template.hasResourceProperties("AWS::Events::Rule", {
+      EventPattern: {
+        source: ["demo.memory-governance"],
+        "detail-type": ["memory.promotion.proposed"],
+        detail: { project_id: ["analytics-poc"] },
+      },
+    });
+  });
+
+  test("the promotion queue is encrypted with the memory key", () => {
+    template.hasResourceProperties("AWS::SQS::Queue", {
+      QueueName: "analytics-poc-test-promotion-queue",
+      KmsMasterKeyId: Match.anyValue(),
+    });
+  });
 });

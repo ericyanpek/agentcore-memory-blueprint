@@ -374,6 +374,33 @@ export class MemoryGovernanceStack extends Stack {
       ],
     });
 
+    // The promotion hint on an approved candidate says where the knowledge should end up,
+    // but a Knowledge Base ingestion job and a Git review are both outside this stack.
+    // The event is therefore parked in a queue a human drains, rather than emitted into
+    // nothing: an unsubscribed event is indistinguishable from a promotion that was
+    // considered and declined.
+    const promotionQueue = new sqs.Queue(this, "PromotionQueue", {
+      queueName: this.resourceName(prefix, "promotion-queue"),
+      encryption: sqs.QueueEncryption.KMS,
+      encryptionMasterKey: memoryKey,
+      retentionPeriod: Duration.days(14),
+    });
+    new events.Rule(this, "PromotionRule", {
+      eventBus,
+      ruleName: this.resourceName(prefix, "memory-promotion"),
+      eventPattern: {
+        source: ["demo.memory-governance"],
+        detailType: ["memory.promotion.proposed"],
+        detail: {
+          project_id: [props.projectId],
+        },
+      },
+      targets: [new targets.SqsQueue(promotionQueue)],
+    });
+    new CfnOutput(this, "PromotionQueueUrl", {
+      value: promotionQueue.queueUrl,
+    });
+
     const runtimePolicy = new iam.ManagedPolicy(
       this,
       "AgentRuntimeMemoryPolicy",
