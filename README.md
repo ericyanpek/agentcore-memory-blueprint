@@ -93,7 +93,11 @@ Kinesis record streaming，以及控制面和数据面 PrivateLink；CDK L2 已�
   `eventExpiryDuration` 碰不到它，`MemoryRecordCreateInput` 上也没有任何 expiry 字段 ——
   变为假的陈述永久可检索，且带 `review_status=approved` 预过滤标签，在检索里是一等公民。
   记录级移除只有显式 `DeleteMemoryRecord` / `BatchDeleteMemoryRecords`。
-- **已验证的是治理属性，未测量回答质量。**
+- **已验证的是治理属性，未测量回答质量。** 治理的目标函数是爆炸半径、可归因性与可撤销性，
+  不是单次问答的正确性。共享层是否回本由两个聚合数决定 —— 共享命中率与重复提问率 ——
+  `src/agent/context_builder.py` 现在为每次检索记录一条指标，
+  `poc/analyze_retrieval_metrics.py` 将其汇总；查询以逐 token 哈希留存，不落原文。
+  尚未积累足够运行来给出这两个数。
 - **闸门管不了去重。** 实验中共享层 4 条记录里有 2 条是同一句话，相关度分数同为 0.6626
   （[实验报告](docs/实验报告.md)检查 13）。闸门判断"够不够格"，天然不判断"是不是已经有了"，
   而共享层的全部价值来自信噪比。

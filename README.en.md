@@ -124,7 +124,13 @@ This is a POC. The boundaries below are deliberate:
   retrievable indefinitely, carrying a `review_status=approved` pre-filter label that makes
   it a first-class retrieval result. Record-level removal exists only through an explicit
   `DeleteMemoryRecord` / `BatchDeleteMemoryRecords`.
-- **Governance properties are validated; answer quality is not measured.**
+- **Governance properties are validated; answer quality is not measured.** Governance
+  optimizes blast radius, attributability, and revocability, not single-answer
+  correctness. Whether the shared tier repays its cost turns on two aggregate numbers —
+  shared hit rate and repeat-question rate — so `src/agent/context_builder.py` now logs a
+  metric per retrieval and `poc/analyze_retrieval_metrics.py` aggregates them. Queries are
+  retained as per-token hashes, never as text. There are not yet enough runs to report
+  either number.
 - **The gate cannot deduplicate.** Two of the four shared records in the experiment are the
   same sentence, scoring an identical 0.6626 ([实验报告](docs/实验报告.md) check 13). A gate
   judges whether a statement qualifies; it does not judge whether the tier already holds it,
