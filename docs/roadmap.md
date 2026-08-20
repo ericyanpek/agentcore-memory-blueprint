@@ -122,115 +122,45 @@ gives them a specific insertion point.
 
 This is the largest capability gap and the one with no partial implementation.
 
-**Current behaviour.** An approved shared record is immutable and **permanent**. This
-paragraph previously said "within the 90-day resource expiry"; that backstop does not
-exist. `eventExpiryDuration` applies per event at write time, and a shared record created
-directly by `BatchCreateMemoryRecords` has no source event, while
-`MemoryRecordCreateInput` carries no expiry field. Record-level removal exists only
-through an explicit `DeleteMemoryRecord` / `BatchDeleteMemoryRecords`. There is no way to
-mark a record as no longer true. If the curated-churn-view constraint that the experiment
-approves is corrected next quarter, the old record remains retrievable and
-indistinguishable from a current one. Record-level TTL does not solve this: an expiring record and a fresh record rank
-identically until the moment it disappears.
+**Current behaviour.** An approved shared record is immutable and **permanent** — there is
+no way to mark it as no longer true. `eventExpiryDuration` applies per event at write time,
+and a shared record created directly by `BatchCreateMemoryRecords` has no source event, so
+it is never reached; `MemoryRecordCreateInput` carries no expiry field either. Record-level
+removal exists only through an explicit `DeleteMemoryRecord` / `BatchDeleteMemoryRecords`.
+If the curated-churn-view constraint the experiment approves is corrected next quarter, the
+old record stays retrievable and indistinguishable from a current one.
 
-**What the platform provides.** This is implementable without leaving AgentCore:
+**Target behaviour.** Model supersession as a **discrete status flag** rather than a time
+window, adjudicated by a reviewer rather than a model:
 
-- `BatchUpdateMemoryRecords` accepts `memoryRecordId`, `content`, `metadata`,
-  `namespaces`, and `timestamp`, so an existing record's metadata can be rewritten.
-- `DeleteMemoryRecord` and `BatchDeleteMemoryRecords` exist for hard removal.
-- Memory record streaming publishes create, update, and delete events to Kinesis,
-  including deletions caused by consolidation de-duplication and superseding.
+1. Add an optional `supersedes: <record_id>` field to the candidate contract.
+2. On approving such a candidate, publish the new record in the same workflow branch and use
+   `BatchUpdateMemoryRecords` to write `superseded_by` onto the old one, flipping its
+   `review_status` to the terminal value `DEPRECATED`.
+3. The retrieval path needs no change — it already pre-filters on
+   `review_status = approved`, so a superseded record leaves the retrievable set on its own.
+4. Both records are kept. An audit trail has to show what the team once believed, and from
+   when.
 
-**Filtering capability available.** Metadata filters support ten operators:
-`EQUALS_TO`, `EXISTS`, `NOT_EXISTS`, `BEFORE`, `AFTER`, `CONTAINS`, `GREATER_THAN`,
-`GREATER_THAN_OR_EQUALS`, `LESS_THAN`, `LESS_THAN_OR_EQUALS` (botocore 1.43.58 service
-model). **Mind the SDK version**: releases older than the `boto3>=1.43.36` pinned in this
-repo's `src/requirements.txt` expose only the first three, so range filters written
-against an older SDK are rejected by local validation.
+The status value reuses AgentCore Registry's existing `DEPRECATED` (measured to be terminal
+platform-side) rather than inventing `superseded` — one concept should have one name within
+one service. **Only the naming and the terminal semantics are borrowed, not the transition
+rules**: Registry permits `REJECTED → APPROVED`, whereas this project's single-use callback
+token is stricter and should not align with it.
 
-Because `BEFORE`/`AFTER` exist, a validity window **can** be expressed as a timestamp
-filter. The blueprint still models supersession as a **discrete status flag**, for audit
-reasons rather than capability ones:
-
-- Add `superseded_by` and set `review_status` to a terminal value such as
-  `superseded` on the old record via `BatchUpdateMemoryRecords`.
-- Retrieval already filters `review_status = approved`
-  (`src/agent/context_builder.py`), so a superseded record leaves the retrievable set
-  with no change to the query path.
-- Keep both records. The audit trail requires knowing what the team believed and
-  when, which a hard delete destroys.
-
-**Use the status name AgentCore already has rather than inventing one.** The approval state
-machine on AgentCore Registry already has a terminal state called `DEPRECATED`, and testing
-confirms the platform itself treats it as terminal — any status change on a record in that
-state is refused:
-
-```
-Cannot update registry record in DEPRECATED status (terminal state)
-```
-
-What is worth borrowing here is not the API but **its modelling choice for supersession**:
-superseded knowledge is not deleted but moved into a state that can no longer change, so it
-leaves the currently-valid set while staying in the audit record. That runs in the same
-direction as the "keep both records" argument above and supplies an official vocabulary — so
-this project should adopt `DEPRECATED` rather than coin `superseded`, on the grounds that one
-concept inside one service should have one name.
-
-**Borrow the name and the terminal semantics only, not the transition rules.** Testing
-Registry's transition matrix surfaced two behaviours that do not suit knowledge governance:
-`REJECTED → APPROVED` is permitted (a rejection can be silently overridden with no
-re-review), and replaying `APPROVED → APPROVED` succeeds. This project's one-time callback
-token returns 409 on replay (check 11 in [实验报告](实验报告.md)), which is stricter than
-Registry and should not be relaxed to match it.
-
-**Route the decision through the existing review workflow, not through a model.**
-Add an optional `supersedes: <record_id>` field to the candidate contract. Approving
-such a candidate publishes the new record and, in the same workflow branch, flips the
-old record to `DEPRECATED`. The reviewer decides what supersedes what.
-
-This last point is deliberate. Automated contradiction detection is the weakest
-component in comparable systems: reported conflict-resolution scores are the lowest
-category for at least one graph-based memory system precisely because the
-contradiction judgment is an LLM call
-([arXiv:2606.01435](https://arxiv.org/html/2606.01435)), and work on stale-knowledge
-handling reports that frontier models handle implicit invalidation — a fact
-negated with no explicit contradiction — poorly, and often accept stale premises
-embedded in a question
-([arXiv:2605.06527](https://arxiv.org/abs/2605.06527)). The blueprint already has a
-human decision point with an audit trail; extending it costs one field and one
-workflow branch, and avoids adding an unreliable adjudicator.
-
-For comparison, the reference design for full temporal modelling is Zep/Graphiti's
-bi-temporal edge model, which separates when a fact was true from when the system
-learned it, and invalidates rather than deletes
-([arXiv:2501.13956](https://arxiv.org/abs/2501.13956)). Zep's current product docs
-document Fact Invalidation directly: when new data invalidates a prior fact, the time it
-became invalid is stored on that fact's edge. **AgentCore has no equivalent**, which is
-why this project must implement supersession itself.
-
-One factual discrepancy worth stating plainly: an AWS machine-learning blog says
-consolidation "marks the outdated memories as INVALID instead of instantly deleting
-them," maintaining an immutable audit trail. But the API reference's `MemoryRecord`
-carries only `content`, `createdAt`, `memoryRecordId`, `memoryStrategyId`, `namespaces`,
-and `metadata` — **no status or validity field** — and memory record streaming defines
-exactly three event types (`MemoryRecordCreated`/`MemoryRecordUpdated`/
-`MemoryRecordDeleted`), with consolidation superseding documented under **deletion**.
-AWS's own blog and API documentation therefore disagree. This blueprint follows the API
-documentation: it **relies on no platform-side INVALID semantics**, and keeps the audit
-trail in the candidate table and via Kinesis streaming. (`MemoryRecordOutput` does carry
-a `MemoryRecordStatus`, but that is a batch-write result of SUCCEEDED/FAILED, not a
-record lifecycle state, and must not be cited as invalidation.)
+Why a discrete flag rather than timestamp filtering, why no automatic contradiction
+detection, and the comparison with Zep's bi-temporal edge model are in
+[design-rationale](design-rationale.md). The disagreement between official sources about the
+`INVALID` status is in
+[the README](../README.en.md#platform-fact-snapshot-rechecked-2026-08-18).
 
 **Files.** `contracts/memory-candidate-proposed.json`, `src/blueprint/domain.py`,
 `src/blueprint/memory.py` (an update path alongside the publish path),
-`src/handlers/publish_shared.py`, `infra/lib/memory-governance-stack.ts` (the
-publisher role needs `BatchUpdateMemoryRecords` under the same exact-namespace
-condition), `dashboard/` (surface superseded records distinctly).
-`superseded_by` is already declared as an indexed key
-(`infra/lib/memory-governance-stack.ts`): an indexed key **can** be added later
-(`UpdateMemory` with `--add-indexed-keys`) but never removed, and adding one does not
-backfill — only records written or updated after the key exists are indexed for it, so
-declaring it early keeps records approved in the meantime filterable once supersession
+`src/handlers/publish_shared.py`, `infra/lib/memory-governance-stack.ts` (the publisher role
+needs `BatchUpdateMemoryRecords` under the same exact-namespace condition), `dashboard/`
+(surface superseded records distinctly). `superseded_by` is already declared as an indexed
+key: a key can be added later but never removed, and adding one does not backfill, so
+declaring it early keeps records approved in the meantime filterable once the mechanism
 ships.
 
 ---
@@ -238,131 +168,67 @@ ships.
 ## 5. When to propose, and what qualifies — severity: high
 
 **This item is a precondition of the argument, not a backlog entry.** The approval chain is
-complete while the capture trigger is missing, which means the bottleneck was never the
-middle segment. This repository is its own specimen: every candidate in the experiment
-report was produced by a script, and the `skills/` directory has only ever been added to,
-never modified.
+complete while the capture trigger is missing, which means the bottleneck was never the middle
+segment. This repository is its own specimen: every candidate in the experiment report was
+produced by a script, and the `skills/` directory has only ever been added to, never modified.
+**With no proposals, the whole governance mechanism idles.**
 
-**Current behaviour.** The proposal contract itself is complete: five `category`
-values, confidence, privacy classification, `promotion_hint`, and an immutable
-`evidence_ref` are all enforced in `src/blueprint/domain.py`. But **nothing tells the
-model when to propose or what is worth proposing.**
+**Current behaviour.** The proposal contract is complete (five `category` values, confidence,
+privacy classification, and an immutable `evidence_ref` are all enforced in
+`src/blueprint/domain.py`), but nothing tells the model **when** to propose.
+`memory_propose_shared` is an ordinary MCP tool, so the model decides when to call it.
 
-`memory_propose_shared` is an ordinary MCP tool, so the model decides when to call it
-based solely on the tool's description. The judgment criteria are now in that
-description (change 1 below), but **the trigger still has no mechanism**: no hook
-evaluates a completed turn for anything worth proposing, and the single Skill under
-`skills/` is unrelated to proposal judgment. Proposing therefore still depends on the
-user asking, or on the model noticing unprompted.
+**Target behaviour, four changes.**
 
-This is a usability gap rather than a security one, but its reach is larger: **if
-nobody proposes, the whole governance mechanism idles** — the review queue stays empty
-and shared memory never accumulates. The candidates in the experiment report were
-produced by a script calling the API directly, not proposed by an agent.
+1. **The criteria are in the tool description — done.** The `memory_propose_shared` docstring
+   defines each of the five `category` values and lists what should not be proposed (the
+   model's own tooling preferences, details specific to one task, restated documentation,
+   unverified guesses). `bridge/validate_bridge.py` asserts those semantics actually appear
+   in the `tools/list` response, so the change cannot silently regress.
+2. **Capture evidence automatically with a hook — not done.** The model must currently call
+   `memory_capture_evidence` before proposing, and skipping it means rejection at evidence
+   validation — safe but poor ergonomics. A hook that captures evidence at the end of each
+   turn keeps evidence ready, leaving the model only the judgment of whether a statement is
+   worth proposing.
+3. **A proposal-judgment Skill — not done.** Add a memory Skill under `skills/` that
+   recognises the moment something was finally pinned down after several rounds of
+   clarification and prompts the user to propose. **This is not merely ergonomic; it is the
+   only path that preserves the attribution chain**: the statement comes from the person who
+   has it, the `evidence_ref` points at that real conversation, and `proposer_actor_id` is
+   still derived server-side from the token's `sub`.
+4. **A scheduled agent directs attention without producing proposals — not done.** It can
+   discover which questions keep recurring but **must not propose**: a proposal would be
+   signed either by the agent itself (breaking attributability) or by some user (forgery),
+   and its evidence could only point at aggregate statistics rather than a conversation
+   anyone can revisit. Its output should be a topic list, handed to change 3.
 
-**Target behaviour, four changes.** Changes 1 and 2 address the proposal itself; changes 3
-and 4 address the trigger — the latter two are conclusions from the 2026-08-18 discussion
-and are not implemented.
+**The privacy boundary holds by construction, not by access control.** The scheduled agent's
+data source is the retrieval metrics (CloudWatch logs) rather than Memory, so it never needs
+the cross-actor read of anyone's personal memory — exactly the permission the IAM condition
+keys deliberately withhold. The metrics contain only per-token hashes and hit counts;
+sensitive content is hashed before it reaches the log. The reviewed shared tier is not subject
+to this: it is already visible to the team, so scanning it for deduplication and promotion
+candidates raises no privacy question.
 
-1. **Convey the judgment criteria to the model — done.** The
-   `memory_propose_shared` docstring now defines each `category` (`fact` is an
-   observation that holds independently of any one task; `decision` includes what it
-   rules out; `constraint` is a definitional trap that silently produces wrong answers
-   when violated; `incident` is a confirmed failure with its cause; `procedure_hint` is
-   a reusable operational step), and states explicitly what should **not** be proposed:
-   the model's own formatting or tooling preferences, details specific to one task,
-   restated documentation, and unverified guesses. It also says confidence must not be
-   inflated to force a submission through, when `restricted` is required, and to call
-   `memory_capture_evidence` first for a version-pinned reference.
-   `bridge/validate_bridge.py` gained an assertion that the **semantics** — not merely
-   the names — appear in the description returned by `tools/list`, so the change cannot
-   silently regress.
-2. **Capture evidence automatically with a hook — not done.** The model must still call
-   `memory_capture_evidence` for an `s3://` reference before calling
-   `memory_propose_shared`; skipping the first step means the proposal is rejected on
-   evidence validation — safe but poor ergonomics (already recorded in
-   [桌面客户端集成设计](桌面客户端集成设计.md) section 11). A hook that captures evidence
-   at the end of each turn keeps evidence always ready, leaving the model only the
-   judgment of whether a statement is worth proposing.
+**Two hard constraints.** First, **prompt frequency is itself a habituation risk** — asking
+"worth writing this down?" every turn teaches the user to dismiss it reflexively, the same
+mechanism as the reviewer fatigue recorded in the README's limitations; the value of change 4
+is making prompts rare, because rarity is what gives them precision. Second, **cold-start
+ordering** — the retrieval metrics hold no data yet, so change 3 must ship on model judgment
+first and tolerate a noisy period, switching to a metrics gate once enough accumulates; the
+reverse does not work.
 
-3. **A proposal-judgment Skill, at the moment contribution costs least — not done.** Add a
-   memory Skill under `skills/` that teaches the agent to recognise a conversation where
-   something was finally pinned down after several rounds of clarification — a definition
-   settled after repeated questioning, a failure traced to its cause, a constraint
-   confirmed by trial and error — and to prompt the user to propose at that moment rather
-   than waiting for them to remember. **This is not merely an ergonomic improvement; it is
-   the only path that preserves the attribution chain**: the statement comes from the person
-   who has it, the `evidence_ref` points at that real conversation, and
-   `proposer_actor_id` is still derived server-side from the token's `sub`. One
-   third-party production deployment takes the same route, moving approval to the moment of
-   capture and having the contributor perform it (see "Four: reviewer throughput and
-   fatigue" in [positioning-analysis](positioning-analysis.md); that source is unverified).
-4. **A scheduled agent that directs attention without producing proposals — not done.** An
-   administrator role or scheduled task can discover **which questions keep recurring**, but
-   **it should not propose on its own**. The reason is attributability: such a proposal
-   would either be signed by the agent itself (breaking "who wrote this, on what evidence")
-   or by some user (which is forgery), and its evidence could only point at aggregate
-   statistics rather than a conversation anyone can revisit. **Its output is therefore a
-   list of topics, handed to the Skill in change 3 for the next time someone actually
-   explains one of them.**
+**Remaining files.** `.mcp.json` and hook configuration; `skills/` for the proposal-judgment
+Skill; `poc/analyze_retrieval_metrics.py` (a topic-list output).
 
-**A scheduled agent needs to read no memory content at all — that is why the privacy
-boundary holds.** Its data source is the retrieval metrics emitted by
-`src/agent/context_builder.py` (CloudWatch logs), not Memory:
-
-| | Scanning long-term memory | Scanning retrieval metrics |
-|---|---|---|
-| Permission required | Cross-actor read of everyone's personal memory | `logs:FilterLogEvents` |
-| What is visible | Memory text | Per-token hash sets and hit counts |
-| Privacy boundary | **Breaks the `actorId` condition key's premise** | No personal data to read |
-| Noise | High | Already reduced |
-
-A role that can read every user's personal memory needs exactly the permission the IAM
-condition keys deliberately withhold — and this blueprint elsewhere quotes Databricks'
-"The app service principal can read every scope." to criticise that very design. Building
-another one would collapse its own argument. The metrics path does not have the problem:
-sensitive content is hashed before it reaches the log, rather than being masked after the
-fact by access control.
-
-**The shared tier and the personal tier are different cases.** Reviewed shared records are
-already visible to the team, so an administrator agent scanning them raises no privacy
-question — deduplication and spotting records due for promotion both should scan them. The
-boundary is the personal tier only.
-
-**Prompt frequency is itself a habituation risk.** A Skill that asks "worth writing this
-down?" every turn teaches the user to dismiss it reflexively, producing an entrance that
-looks functional and is entirely noise — the same mechanism as the reviewer fatigue recorded
-in the README's limitations. **The value of change 4 is therefore not finding more topics
-but making prompts rare**: rarity is what gives them precision.
-
-**Division of labour across the four.** Change 1 settles the criteria (done), change 2
-removes the prerequisite burden (outstanding), change 3 supplies the trigger (outstanding),
-and change 4 gives change 3 a frequency gate (outstanding).
-
-**The cold-start order is a hard constraint.** The retrieval metrics hold no data yet, so
-change 3 must ship on the model's own judgment first and tolerate a noisy period, switching
-to a metrics gate once enough has accumulated. The reverse does not work: with no metric
-data, the Skill can still function on model judgment alone.
-
-**Remaining files.** `.mcp.json` and hook configuration (automatic evidence capture);
-`skills/` for the proposal-judgment Skill; `poc/analyze_retrieval_metrics.py` (a topic-list
-output for a scheduled agent to consume).
-
-> **Fix three defects in the instrumentation first, or change 4 rests on bad data.** First,
-> `fingerprint_query` tokenises on `[a-z0-9]+`, which is **entirely ineffective for Chinese**
-> (no tokens means an empty set), and the desktop path is used mostly in Chinese. Second, a
-> fingerprint detects only similarly worded repeats, not the same question asked
-> differently; catching the latter means storing embeddings, which are no longer
-> irreversible. Third, the instrumentation currently exists only in
-> `src/agent/context_builder.py` (the Runtime path) — **the desktop bridge is not
-> instrumented, and that is where the traffic is** — and the fingerprint algorithm must be
-> identical on both sides, or the same question produces different hashes on each path and
-> cross-path repeat detection silently fails. That is a correctness problem, not a matter of
-> code style.
-
-> `poc/runtime_agent.py` is deliberately excluded: it has no proposal tool at all, and
-> its system prompt only governs consuming shared memory. The proposal capability exists
-> only in the desktop bridge.
+> **Fix three instrumentation defects first, or change 4 rests on bad data.** First,
+> `fingerprint_query` tokenises on `[a-z0-9]+`, which is **ineffective for Chinese**, and the
+> desktop path is used mostly in Chinese. Second, it detects only similarly worded repeats,
+> not the same question asked differently (catching that means storing embeddings, which are
+> no longer irreversible). Third, the instrumentation exists only in
+> `src/agent/context_builder.py` — **the desktop bridge is not instrumented, and that is where
+> the traffic is** — and both sides must use an identical algorithm, or cross-path repeat
+> detection silently fails. That is a correctness problem.
 
 ---
 

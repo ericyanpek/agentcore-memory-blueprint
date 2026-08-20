@@ -35,14 +35,15 @@ flowchart LR
 
 | 步骤 | 做什么 | 代码位置 | 官方依据 |
 |---|---|---|---|
-| ① **提案** | 智能体只能提案，不能写共享层。候选项是结构化契约：陈述、五种 `category`、指向不可变记录的 `evidence_ref`、置信度、隐私分级 | `bridge/server.py:322`（`memory_propose_shared`）、`src/blueprint/domain.py:27` | GenAI 安全参考架构要求 "Prevent memory poisoning by ensuring that users can't modify their session ID or actor ID" —— 故 bridge 不暴露任何 `actor_id` 参数 |
-| ② **策略闸门** | 纯布尔判断，无模型参与：`privacy_classification != "restricted" and confidence >= 0.70` | `src/blueprint/domain.py:103` | AGENTSEC04-BP02："**Risk classification itself can't rely on an LLM** exposed to the same untrusted content... Use **deterministic logic**" |
-| ③ **人工审核** | Step Functions `WAIT_FOR_TASK_TOKEN` 挂起等待；审核人 API 返回前 `pop` 掉 token，一次性生效 | `infra/lib/memory-governance-stack.ts:503`、`src/handlers/reviewer_api.py:68` | 同上："AWS Step Functions **.waitForTaskToken callback pattern introduces an approval step**"；"**Reviewers don't typically call Step Functions APIs directly**" |
-| ④ **逐字入库** | 走 `BatchCreateMemoryRecords` 直接写长期记录，`content.text` 就是审核员批准的那段字符串，不经二次模型改写 | `src/blueprint/memory.py:56` | `MemoryRecordCreateInput` 接受 `content`/`namespaces`/`metadata` 等字段，可绕过策略抽取直接建记录 |
-| ⑤ **预过滤检索** | 按 `review_status = approved` 过滤，**在向量检索之前**缩小候选集 —— 未批准记录不参与相似度竞争 | `src/agent/context_builder.py:135` | 元数据过滤支持 10 个操作符，`RetrieveMemoryRecords` 的 `metadataFilters` 为预过滤 |
-| ⑥ **晋升** | 批准且带 `promotion_hint` 时发出领域事件，路由到 KMS 加密队列由人排空 | `src/handlers/mark_status.py:52`、`infra/lib/memory-governance-stack.ts:389` | 无官方来源，属工程判断：KB 摄取与 Git 评审都在本堆栈之外，且都需要人 |
+| ① **提案** | 智能体只能提案，不能写共享层。候选项是结构化契约：陈述、五种 `category`、指向不可变记录的 `evidence_ref`、置信度、隐私分级 | `bridge/server.py:322`（`memory_propose_shared`）、`src/blueprint/domain.py:27` | [一、人工审核是共享写入的唯一入口](docs/AWS官方背书.md#一人工审核是共享写入的唯一入口)、[三、按 actorId 与 namespace 做隔离](docs/AWS官方背书.md#三按-actorid-与-namespace-做隔离由-iam-强制) |
+| ② **策略闸门** | 纯布尔判断，无模型参与：`privacy_classification != "restricted" and confidence >= 0.70` | `src/blueprint/domain.py:103` | [二、政策闸门用确定性规则，不用 LLM](docs/AWS官方背书.md#二政策闸门用确定性规则不用-llm) |
+| ③ **人工审核** | Step Functions `WAIT_FOR_TASK_TOKEN` 挂起等待；审核人 API 返回前 `pop` 掉 token，一次性生效 | `infra/lib/memory-governance-stack.ts:503`、`src/handlers/reviewer_api.py:68` | [一、人工审核是共享写入的唯一入口](docs/AWS官方背书.md#一人工审核是共享写入的唯一入口) |
+| ④ **逐字入库** | 走 `BatchCreateMemoryRecords` 直接写长期记录，`content.text` 就是审核员批准的那段字符串，不经二次模型改写 | `src/blueprint/memory.py:56` | [五、逐字发布：批准的文本原样入库](docs/AWS官方背书.md#五逐字发布批准的文本原样入库) |
+| ⑤ **预过滤检索** | 按 `review_status = approved` 过滤，**在向量检索之前**缩小候选集 —— 未批准记录不参与相似度竞争 | `src/agent/context_builder.py:135` | [四、记忆不是权威事实，不得覆盖当前数据](docs/AWS官方背书.md#四记忆不是权威事实不得覆盖当前数据) |
+| ⑥ **晋升** | 批准且带 `promotion_hint` 时发出领域事件，路由到 KMS 加密队列由人排空 | `src/handlers/mark_status.py:52`、`infra/lib/memory-governance-stack.ts:389` | [AWS 未覆盖的部分](docs/AWS官方背书.md#aws-未覆盖的部分) —— 属工程判断 |
 
-逐条原文、精确到行的实现位置与实测证据见 **[AWS 官方背书](docs/AWS官方背书.md)**。
+每条依据的官方原文、实现位置与实测证据都在 **[AWS 官方背书](docs/AWS官方背书.md)**；该文档同时
+列出[不可作为 AWS 官方来源引用](docs/AWS官方背书.md#不可作为-aws-官方来源引用)的部分。
 
 **两个 Memory 资源是刻意的**：`PersonalMemory` 由运行时写入，actor 为已认证用户 ID；
 `SharedProjectMemory` 只允许审核发布角色写入。相比单资源加命名空间约定，边界可表达为 IAM

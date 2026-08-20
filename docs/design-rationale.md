@@ -4,7 +4,7 @@
 > Related: [architecture.md](architecture.md) ·
 > [roadmap.md](roadmap.md)
 
-This document records why the blueprint makes four specific choices, and what
+This document records why the blueprint makes five specific choices, and what
 external evidence supports or contests each one. It is written to be falsifiable:
 each claim names a source, and claims that could not be verified are marked as such.
 
@@ -165,7 +165,39 @@ pre-filtering). The transition rules are not copied either — Registry permits
 whereas this blueprint's one-time token returns 409 on replay (check 11 in
 [实验报告](实验报告.md)).
 
-## 4. Two Memory resources instead of one
+## 4. Supersession by discrete status flag, not timestamps or automatic adjudication
+
+**The choice.** When an approved fact becomes false, a discrete status flag flips the old
+record to a terminal state and keeps it, rather than expressing validity as a time window or
+letting a model adjudicate the contradiction. The design is in
+[roadmap](roadmap.md) item 4.
+
+**Timestamps would work, and should not be used.** Metadata filtering supports
+`BEFORE`/`AFTER`, so a validity window **could** be expressed as a filter over timestamps.
+The reason not to is auditability rather than capability: a time window cannot distinguish
+"expired" from "judged false", and a record about to expire ranks identically to a fresh one
+until the moment it disappears. A discrete flag makes "when the team stopped believing this"
+a queryable fact.
+
+**Why no automatic contradiction detection.** This is the weakest link in comparable systems:
+one graph-based memory system reports conflict resolution as its lowest-scoring category
+precisely because the contradiction judgment is an LLM call
+([arXiv:2606.01435](https://arxiv.org/html/2606.01435)); separate work reports that frontier
+models handle implicit invalidation poorly — a fact negated without an explicit contradiction
+— and often accept stale premises embedded in the question
+([arXiv:2605.06527](https://arxiv.org/abs/2605.06527)). This blueprint already has a human
+decision point with an audit trail; extending it costs one field and one workflow branch,
+whereas introducing an adjudicator stakes correctness on the least reliable step.
+
+**The reference point for full temporal modelling.** Zep/Graphiti's bi-temporal edge model
+separates "when a fact was true" from "when the system learned it", and invalidates rather
+than deletes ([arXiv:2501.13956](https://arxiv.org/abs/2501.13956)). **AgentCore has no such
+capability today**, which is why this project must build supersession itself. This blueprint
+takes only the simpler half: a single status axis, no bi-temporal model — enough to leave the
+retrievable set and leave an audit trail, not enough to answer "three months ago, when did we
+think this was true".
+
+## 5. Two Memory resources instead of one
 
 **The choice.** `PersonalMemory` and `SharedProjectMemory` are separate resources,
 so the boundary between them is expressible as a resource ARN in an IAM policy
@@ -185,7 +217,7 @@ per-actor IAM conditions demonstrated in `poc/validate_identity_pool.py`, which 
 Runtime role does not currently carry. See `docs/architecture.md` and the scope
 limitations in the README; no roadmap item covers it yet.
 
-## 5. On evaluating memory quality
+## 6. On evaluating memory quality
 
 The blueprint validates **governance properties** (isolation holds, the gate
 blocks, tokens do not replay). It does not claim that memory improves answer
@@ -216,7 +248,7 @@ extraction, updating, and QA separately — such as HaluMem
 ([arXiv:2511.03506](https://arxiv.org/abs/2511.03506)) — are more diagnostic than a
 single aggregate number, because they localize where errors originate.
 
-## 6. Long context does not remove the requirement
+## 7. Long context does not remove the requirement
 
 Large context windows weaken the *token-cost* argument for retrieval-based memory
 and do not weaken the *governance* argument. Long context cannot provide
