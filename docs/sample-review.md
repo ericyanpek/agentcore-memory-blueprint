@@ -27,10 +27,10 @@ sample repository changes.
 | [Error handling](https://github.com/awslabs/agentcore-samples/blob/ff11ccbb89d391a7c2478160a1b66c63f0b63e59/01-features/04-manage-context-of-your-agent/memory/06-production-patterns/01-error-handling.md) | Only throttling, service errors, and classified transient record failures are retried. Memory reads degrade to empty context; governed writes fail visibly. |
 | [IAM-scoped access](https://github.com/awslabs/agentcore-samples/tree/ff11ccbb89d391a7c2478160a1b66c63f0b63e59/01-features/04-manage-context-of-your-agent/memory/05-security/01-iam-scoped-access) | Shared publish/read permissions include the exact project namespace condition. The docs distinguish namespace organization from IAM authorization. |
 
-Direct record creation is the largest correction to the original design. The old
-flow was approval -> `CreateEvent` -> asynchronous semantic extraction. That allowed
-a second model to rewrite approved content and delayed availability. The new flow is
-approval -> direct long-term record, which is deterministic and auditable.
+The original design called `CreateEvent` after approval and then ran asynchronous semantic
+extraction. This allowed a second model to rewrite approved content and delayed
+availability. The current design creates the long-term record directly after approval,
+keeping the stored content deterministic and auditable.
 
 ## Adapted, Not Copied
 

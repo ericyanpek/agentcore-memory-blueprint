@@ -3,6 +3,8 @@
 > 主版本：中文。English: [CONTROL_BASELINE.en.md](CONTROL_BASELINE.en.md)。
 > 基准日期：2026-08-04。适用于使用 AgentCore Memory 的生产工作负载。
 
+本基线将治理要求组织为可审计的控制项，并明确每项控制的最低证据与责任人。
+
 ## 1. 规范强度与风险等级
 
 - **MUST**：发布前必须满足；缺失时只能走有期限的正式例外。

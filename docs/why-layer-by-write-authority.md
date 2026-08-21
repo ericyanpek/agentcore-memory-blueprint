@@ -8,15 +8,15 @@ change a layer, not by what a layer contains. Deployment shape and storage choic
 of scope — one concrete implementation is in [architecture.md](architecture.md), and the
 external evidence behind each trade-off is in [design-rationale.md](design-rationale.md).
 
-## The problem: episodic/semantic cannot answer the only question that matters
+## The problem: episodic/semantic does not determine precedence
 
 The conventional taxonomy divides memory by **the form of its content**: episodic is what
 happened, semantic is the facts abstracted from it, procedural is how to do something. The
 vocabulary comes from cognitive psychology, and as descriptive language it works.
 
-But the question a running system answers every day is not "which category is this memory," it
-is **"may this one override that one."** A user said last week they prefer one definition of a
-metric; a team document specifies another; they conflict; pick.
+A running system must also answer a precedence question outside content classification:
+**"may this one override that one?"** A user said last week they prefer one definition of a
+metric; a team document specifies another. The system must determine which one wins.
 
 A containment taxonomy has nothing to say here. There is no function from type to authority:
 an episodic memory may be a reviewed conclusion from an incident post-mortem, and a semantic
@@ -115,14 +115,13 @@ stabilised enough to be written into a document, and this document does not pret
 What the system can do is put the evidence on the table: how often the record was retrieved,
 which answers used it, how long ago it last changed.
 
-A staging area whose contents never graduate has already failed. It grows into a store better
-governed but just as bloated, when its purpose was to be a transit point. The only indicator
-of whether it works is whether promotion has ever happened.
+If no content ever graduates, the staging area does not meet its transit objective and grows
+into a better-governed but equally bloated store. Whether promotion has actually occurred is
+a direct indicator of that objective.
 
 ## What this layering does not promise
 
-This is the section that matters most, because the previous five hold only inside the
-boundary drawn here.
+The conclusions in the previous five sections hold only within the boundaries below.
 
 **It does not improve answer quality.** Layering does not make a model answer more
 accurately. Putting a memory into a governed layer adds nothing to that memory's

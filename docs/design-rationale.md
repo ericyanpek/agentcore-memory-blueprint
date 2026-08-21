@@ -61,8 +61,8 @@ results, then Skills and configuration in Git, then Knowledge Base documents, th
 approved shared memory, then personal preference, then model inference. Higher
 layers override lower ones. Memory can never override current data.
 
-**Why this matters more than it appears.** Three documented failure modes make an
-unordered context assembly actively harmful, not merely suboptimal:
+**Failure modes addressed by this ordering.** Three documented failure modes show
+that unordered context assembly directly affects results:
 
 - **Position sensitivity.** Evidence placed mid-context is recovered substantially
   less reliably than evidence at either end
@@ -91,7 +91,7 @@ Memory resource. Only the publisher Lambda holds
 `bedrock-agentcore:BatchCreateMemoryRecords`, and it is invoked only from the
 approved branch of the review workflow.
 
-**This addresses a demonstrated attack class, not a hypothetical one.**
+**This control addresses an attack class supported by published evidence.**
 
 - **MINJA** injects malicious records into an agent's memory bank using ordinary
   queries only, requiring no privileged access to the store. The paper reports high
@@ -117,10 +117,10 @@ to one actor by IAM, but it is not reviewed. This is a deliberate boundary, not 
 oversight — reviewing every personal preference would make the system unusable — but
 it should not be described as "memory is reviewed".
 
-### A native counterpart already exists in the same service: AgentCore Registry
+### A native counterpart in AgentCore Registry
 
-The strongest support for this section is not an external paper but AgentCore itself. The
-same service ships a complete approval state machine on its **Registry** resource:
+AgentCore provides a complete approval state machine on the same service's **Registry**
+resource:
 `SubmitRegistryRecordForApproval`, `UpdateRegistryRecordStatus`, and `ListRegistryRecords`
 filtered by status, with values
 `DRAFT | PENDING_APPROVAL | APPROVED | REJECTED | DEPRECATED` (plus `CREATING`/`UPDATING`

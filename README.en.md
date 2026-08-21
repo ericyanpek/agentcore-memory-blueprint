@@ -8,13 +8,12 @@ When several users share one agent, personal memory stays strictly isolated whil
 valuable experience becomes team knowledge only after human review. An AWS reference
 implementation on Amazon Bedrock AgentCore Memory.
 
-**What is scarce in an enterprise is not memory storage but the moment an experience gets
-written down.** The difficulty with a Knowledge Base or a Skills directory was never storage
-or retrieval — it is that nothing naturally triggers the write. So what this project governs
-is the shared tier's **write boundary**, and a Knowledge Base and Skills are not its
-competitors; they are downstream of it.
+The main engineering problem in shared memory is deciding when and by whom experience may
+enter the shared tier. Knowledge Bases and Skills hold stable knowledge; this project governs
+the shared-memory **write boundary** upstream of them, with an explicit trigger and review
+path for knowledge capture.
 
-**Start with the results**: [experiment report](docs/实验报告.md) (a real run, 14 checks) ·
+**Measured results**: [experiment report](docs/实验报告.md) (a real run, 14 checks) ·
 [runbook](docs/demo-runbook.md) (run it end to end)
 
 ## The shared-memory pipeline
@@ -51,7 +50,7 @@ The verbatim quote, implementation reference, and measured evidence behind each 
 **[aws-alignment](docs/aws-alignment.md)**, which also lists what is
 [not citable as an AWS position](docs/aws-alignment.md#not-citable-as-an-aws-position).
 
-**Two Memory resources is deliberate**: `PersonalMemory` is written by the runtime with the
+**The design uses two Memory resources**: `PersonalMemory` is written by the runtime with the
 authenticated user ID as the actor; `SharedProjectMemory` accepts writes only from the
 review-publisher role. Compared with one resource plus a namespace convention, the boundary
 becomes a resource ARN in IAM rather than a string comparison that must be correct
@@ -65,16 +64,17 @@ everywhere.
 
 ## Why layer it this way
 
-Memory is a **governed asset with an authority level**, not a smarter vector store. Three
-sentences, none of which depend on a platform (the full argument is in
+This project treats memory as a **governed asset with an authority level**; vector retrieval
+is one implementation component. The following three points do not depend on a platform
+(the full argument is in
 **[why-layer-by-write-authority](docs/why-layer-by-write-authority.md)**):
 
 - Layers are divided by **who is entitled to change them** rather than by
   episodic/semantic — which turns conflict resolution from a semantic judgment into a table
   lookup, and a lookup can happen before retrieval, with no model involved.
 - Retrieval precedence is a **total order** carried into the context: live data > Skills >
-  authoritative documents > reviewed team memory > personal preference. This replaces "which
-  memories are relevant" (no answer) with "which authority wins" (one answer).
+  authoritative documents > reviewed team memory > personal preference. The system therefore
+  establishes authority among conflicting sources before applying relevance.
 - The shared tier is a **staging area for knowledge assets**: more governed than a vector
   store, less friction than authoring a document, promoted upward once stable.
 
@@ -176,7 +176,7 @@ retrieval validation, and those decisions should not hide inside a memory demo.
 | [实验报告](docs/实验报告.md) | [scenario-test-report](docs/scenario-test-report.md) | The measured run and the results of 14 checks |
 | [架构设计](docs/架构设计.md) | [architecture](docs/architecture.md) | Trust boundaries, retrieval precedence, information lifecycle |
 | [设计取舍依据](docs/设计取舍依据.md) | [design-rationale](docs/design-rationale.md) | Reasoning and external evidence behind the core judgments |
-| [为什么按写入权威分层](docs/为什么按写入权威分层.md) | [why-layer-by-write-authority](docs/why-layer-by-write-authority.md) | The layering argument and its load-bearing limits, with no platform dependency |
+| [为什么按写入权威分层](docs/为什么按写入权威分层.md) | [why-layer-by-write-authority](docs/why-layer-by-write-authority.md) | The layering argument and its scope, with no platform dependency |
 | [AWS 官方背书](docs/AWS官方背书.md) | [aws-alignment](docs/aws-alignment.md) | Each claim aligned to AWS documentation, with implementation references and measured evidence |
 | [下一步演进](docs/下一步演进.md) | [roadmap](docs/roadmap.md) | Prioritised evolution items, including supersession semantics and the capture-entrance design |
 | [定位分析](docs/定位分析.md) | [positioning-analysis](docs/positioning-analysis.md) | External research notes: where the differentiation lies, four rebuttals to answer, and an unciteable list |

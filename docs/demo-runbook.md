@@ -4,7 +4,7 @@
 
 ## Story
 
-Five analysts use one project agent for a customer-churn project.
+The scenario uses five analysts sharing one project agent for customer-churn analysis.
 
 - Alice prefers concise SQL-first answers. This should become only Alice's personal
   preference.

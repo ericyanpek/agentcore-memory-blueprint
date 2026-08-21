@@ -4,12 +4,10 @@
 > Related: [design-rationale.md](design-rationale.md) ·
 > [architecture.md](architecture.md) · [AWS 官方背书](AWS官方背书.md)
 
-Items are ordered by whether they close a gap between what the documentation claims
-and what the code enforces (items 1–2), extend the governance model into a dimension it
-does not yet cover or make it actually get used (items 3–6), harden the validation
-methodology (item 7), or come from the AWS Well-Architected Agentic AI Lens rather than
-from self-review (items 8–9, grouped separately because their basis is an external
-framework).
+The items form four groups: items 1–2 close gaps between documented claims and enforced
+constraints; items 3–6 extend governance coverage and adoption paths; item 7 hardens the
+validation methodology; and items 8–9 address gaps identified by the AWS Well-Architected
+Agentic AI Lens.
 
 Each item states the current behaviour, the target behaviour, and the affected files.
 Severity uses the same scale as the production-gap tables in
@@ -167,10 +165,10 @@ ships.
 
 ## 5. When to propose, and what qualifies — severity: high
 
-**This item is a precondition of the argument, not a backlog entry.** The approval chain is
-complete while the capture trigger is missing, which means the bottleneck was never the middle
-segment. This repository is its own specimen: every candidate in the experiment report was
-produced by a script, and the `skills/` directory has only ever been added to, never modified.
+**This item determines whether the governance path receives any input and is no less
+important than the approval stages.** The approval chain is complete while the capture
+trigger is missing. Every candidate in the experiment report was produced by a script, and
+the `skills/` directory has only ever been added to, never modified.
 **With no proposals, the whole governance mechanism idles.**
 
 **Current behaviour.** The proposal contract is complete (five `category` values, confidence,
@@ -192,10 +190,10 @@ privacy classification, and an immutable `evidence_ref` are all enforced in
    worth proposing.
 3. **A proposal-judgment Skill — not done.** Add a memory Skill under `skills/` that
    recognises the moment something was finally pinned down after several rounds of
-   clarification and prompts the user to propose. **This is not merely ergonomic; it is the
-   only path that preserves the attribution chain**: the statement comes from the person who
-   has it, the `evidence_ref` points at that real conversation, and `proposer_actor_id` is
-   still derived server-side from the token's `sub`.
+   clarification and prompts the user to propose. This path also preserves the attribution
+   chain: the statement comes from the person who has it, the `evidence_ref` points at that
+   real conversation, and `proposer_actor_id` is still derived server-side from the token's
+   `sub`.
 4. **A scheduled agent directs attention without producing proposals — not done.** It can
    discover which questions keep recurring but **must not propose**: a proposal would be
    signed either by the agent itself (breaking attributability) or by some user (forgery),
@@ -412,6 +410,6 @@ protocol pieces
 and the Thomson Reuters position above arrives at approval-gated, versioned
 procedural memory from a professional-duty argument rather than a platform one.
 
-This is context for prioritization, not a claim of novelty: the governance model is
-the contribution, and items 1 through 4 are what make it hold under adversarial
+This is context for prioritization, not a claim of novelty: the contribution lies in the
+governance model, and items 1 through 4 are what make it hold under adversarial
 reading rather than cooperative reading.

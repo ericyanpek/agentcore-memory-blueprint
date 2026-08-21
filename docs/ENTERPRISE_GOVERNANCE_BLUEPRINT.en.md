@@ -6,7 +6,7 @@
 
 ## 1. Position and Service Boundary
 
-**One-sentence mental model: AgentCore Memory is a regional, IAM-constrained data-plane
+**Service boundary: AgentCore Memory is a regional, IAM-constrained data-plane
 memory store with asynchronous extraction; the application maps trusted identities to
 actor/session/namespace and decides what is eligible to be remembered.**
 
@@ -27,7 +27,7 @@ It does not solve:
 - native cross-Region replication, enterprise RTO/RPO, deletion propagation, or legal hold;
 - Gateway tool catalogs, Policy Cedar decisions, or Runtime compute-session isolation.
 
-### Five Commonly Confused Concepts
+### Five Key Concept Boundaries
 
 | Concept | Correct definition | Common misconception |
 |---|---|---|

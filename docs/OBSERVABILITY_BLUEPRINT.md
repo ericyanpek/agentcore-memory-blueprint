@@ -13,8 +13,8 @@
 3. 遥测是否经过脱敏、加密、保留、最小权限和成本控制；
 4. 证据能否由 request、session 或 trace ID 交叉定位。
 
-“Console 有图”不是验收标准。未配置 log delivery、未启用 tracing 或查询不到 span 时，
-结论必须是“遥测缺口”，不能写成“没有错误”。
+Console 图表不能单独作为验收证据。未配置 log delivery、未启用 tracing 或查询不到 span
+时，结论应记录为“遥测缺口”，不得据此判断“没有错误”。
 
 ## 2. 三层遥测模型
 
@@ -189,4 +189,3 @@ storage/maintenance 与分析查询扫描量。
 - [Knowledge Bases ingestion logging](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-bases-logging.html)
 - [Firehose Apache Iceberg destination](https://docs.aws.amazon.com/firehose/latest/dev/apache-iceberg-destination.html)
 - [Amazon S3 Tables](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html)
-

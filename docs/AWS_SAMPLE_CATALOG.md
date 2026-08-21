@@ -1,7 +1,7 @@
 # AgentCore Memory AWS 官方样例目录
 
 > 主版本：中文。English: [AWS_SAMPLE_CATALOG.en.md](AWS_SAMPLE_CATALOG.en.md)。
-> 复核日期：2026-08-04。样例用于学习和实验设计，不构成生产合规证明。
+> 复核日期：2026-08-04。样例仅用于能力验证和实验设计，不作为生产合规证据。
 
 ## 1. 固定快照
 

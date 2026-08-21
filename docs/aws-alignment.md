@@ -8,14 +8,13 @@
 This document maps each design claim in the blueprint to AWS documentation, with the
 verbatim quote, the implementation location, and the measured evidence.
 
-## On the word "grounding"
+## Types of evidence relationship
 
-A Well-Architected Lens is not an a-priori specification. Patterns reach a Lens after
-solution architects hit the same problem repeatedly in the field, distil it, and see it
-validated. **A Lens is a post-hoc codification of practice, not a precondition for it.**
+A Well-Architected Lens is not an a-priori specification. Solution architects identify and
+validate recurring field patterns before those patterns are codified in a Lens. A Lens
+therefore records validated practice patterns; it is not a precondition for a practice.
 
-So this is not "AWS specified it and the project complied." There are three distinct
-relationships:
+This document distinguishes three relationships:
 
 | Layer | Content |
 |---|---|
@@ -23,9 +22,8 @@ relationships:
 | **AWS built the primitive but did not wire it to Memory** | "Memory governance is codified and auditable" is the Level 5 goal of AGENTSEC01. AgentCore **already has a full approval state machine on its Registry resource** (`SubmitRegistryRecordForApproval` / `UpdateRegistryRecordStatus`), but the Memory resource is not connected to it. This layer is customer-built |
 | **AWS is silent** | Admission control for shared memory, the retrieval precedence order, version-pinned evidence — no official source; these are the project's engineering judgements |
 
-Layers two and three are where the actual contribution sits. The value of layer one is
-narrower: it shows these choices are not personal preference but run in the same direction
-as AWS's own framework.
+Layers two and three are implemented by this project. Layer one shows that the corresponding
+design choices align with the AWS framework.
 
 ---
 

@@ -9,15 +9,14 @@
 
 ## 1. The Problem
 
-When an agent runs inside AgentCore Runtime, identity is not a question — Runtime is a
-trusted server-side component that inherently knows who the caller is.
+When an agent runs inside AgentCore Runtime, a trusted server-side component supplies the
+calling identity.
 
-In practice, though, engineers prefer their own desktop clients (Claude Code, Codex CLI).
-Each person runs a local agent, yet everyone wants to share the **same cloud-hosted
-AgentCore Memory**: personal preferences isolated per user, team knowledge accessible to
-all.
+The desktop-client path lacks this premise. Engineers use local agents such as Claude Code
+or Codex CLI while sharing the **same cloud-hosted AgentCore Memory**: personal preferences
+remain isolated by user, and team knowledge is available to members.
 
-That creates the question:
+The identity requirement is:
 
 > **What gives the cloud side any reason to believe "this is who I am"?**
 
@@ -32,7 +31,7 @@ server was exactly this anti-pattern:
 That is fine for a single user working locally. The moment multiple users share a
 cloud-hosted Memory, it becomes an exploitable privilege-escalation hole.
 
-## 2. A Hard Constraint
+## 2. Identity Constraint
 
 **Claude Code does not expose the logged-in user's identity to MCP servers or hooks.**
 
@@ -46,9 +45,9 @@ server can verify independently.
 
 ## 3. The Eliminated Approach: Gateway + Cognito Direct Connection
 
-The most "AWS-native" instinct is to use AgentCore Gateway — a managed MCP endpoint
-that supports `CUSTOM_JWT` inbound authentication and can verify a JWT's signature,
-issuer, and audience on its own.
+A candidate approach is AgentCore Gateway, a managed MCP endpoint that supports
+`CUSTOM_JWT` inbound authentication and independently verifies a JWT's signature, issuer,
+and audience.
 
 For interactive MCP clients, however, this path does not work, for three reasons:
 
@@ -63,16 +62,16 @@ down at the subsequent metadata discovery and DCR stages. AWS blog examples for 
 pattern use Kiro IDE with an `mcp-remote` proxy; there are no publicly documented
 end-to-end cases with Claude Code.
 
-**This is not a "tokens expire" problem — the handshake never completes.**
+**The failure occurs during the handshake, not during token expiry.**
 
-One common misconception deserves clarification: AgentCore Identity's Token Vault can
-automatically refresh tokens, but it addresses **outbound** authorization (an agent
-calling GitHub or Slack). Memory uses IAM, not OAuth, so the Token Vault is not
-applicable; AgentCore Identity also cannot serve as an inbound authorization server.
+AgentCore Identity's Token Vault can automatically refresh tokens, but it addresses
+**outbound** authorization for an agent calling GitHub or Slack. Memory uses IAM rather
+than OAuth, so the Token Vault does not apply to this path; AgentCore Identity also cannot
+serve as an inbound authorization server.
 
 ## 4. The Adopted Approach: Local Bridge + Identity Pool
 
-The core idea: **take OAuth tokens off the hot path.**
+The design keeps **OAuth tokens off the hot path.**
 
 ```
 Claude Code / Codex ──stdio──→ local memory-bridge (MCP server)
@@ -157,7 +156,7 @@ memory at the IAM level.
 
 ## 5. MCP Tool Contract: Encoding Governance Boundaries in the Tool Surface
 
-What is not exposed cannot be misused.
+The tool contract does not expose a direct shared-memory write operation.
 
 | Tool | Authorization source | Notes |
 |---|---|---|
@@ -186,7 +185,7 @@ preference as a team-wide conclusion.
 ## 6. The Evidence Chain: Why a Local Transcript Is Not Evidence
 
 The governance rules require every candidate to carry an `evidence_ref` pointing to an
-immeville record (`trace://`, `s3://`, or `log://`).
+immutable record (`trace://`, `s3://`, or `log://`).
 
 **Claude Code's transcript lives on the user's own disk, where it can be edited or
 deleted, and therefore cannot serve as evidence.** If it could, a reviewer would be
@@ -204,10 +203,10 @@ Bucket constraints (CDK-defined):
 - The desktop role has only `s3:PutObject`, restricted to its own prefix
 - **`evidence_ref` pins the `versionId`**
 
-### A Mistake I Made Initially
+### Incorrect Assumption in the Initial Implementation
 
-The first version denied only deletion, and I wrote that "the proposer cannot alter their
-own evidence." **That conclusion was wrong.** Code review prompted me to test it, and the
+The first version denied only deletion and therefore assumed that "the proposer cannot alter
+their own evidence." Code review prompted a test that disproved the assumption:
 result overturned it:
 
 ```
@@ -445,11 +444,11 @@ rather than counted as a success.
 
 ## 12. Conclusion
 
-**Claude Code and Codex CLI can integrate cleanly with cloud-hosted AgentCore Memory**,
-provided one constraint is accepted: a desktop client is not a trustworthy identity
-source.
+Claude Code and Codex CLI can access cloud-hosted AgentCore Memory through a local bridge
+and an Identity Pool. The design assumes that a desktop client is not a trustworthy
+identity source.
 
-The correct approach is not to have the client declare its identity, but to:
+The implementation proceeds as follows:
 
 1. Have the user sign in to the enterprise IdP locally.
 2. Have the Identity Pool map the verified `sub` to a session tag.
@@ -457,5 +456,5 @@ The correct approach is not to have the client declare its identity, but to:
 4. Expose no tool capable of crossing isolation boundaries; team knowledge can only be
    proposed.
 
-Isolation is enforced by AWS, not by the goodwill of the client or the bridge — and that
-has been confirmed by mirror testing with two real users.
+AWS controls enforce isolation without relying on correct client or bridge behavior. Mirror
+testing with two real users confirmed this property.

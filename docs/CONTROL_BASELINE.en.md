@@ -3,6 +3,9 @@
 > English translation. Chinese primary: [CONTROL_BASELINE.md](CONTROL_BASELINE.md).
 > Baseline date: 2026-08-04. Applies to production workloads using AgentCore Memory.
 
+This baseline organizes governance requirements as auditable controls, with minimum
+evidence and an accountable owner for each control.
+
 ## 1. Requirement Strength and Risk
 
 - **MUST**: required before release; absence requires a time-bounded formal exception.

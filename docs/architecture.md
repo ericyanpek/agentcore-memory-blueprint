@@ -36,9 +36,9 @@ organizational convention for direct long-term records; it is not a security pri
 | Managed Knowledge Base | Authoritative documents and durable facts | Document owner | Yes |
 | Team Skills | Executable procedures and tool policy | Git review and tests | Loaded by trigger |
 
-Knowledge Base is a retrieval mechanism over authoritative documents. Skills are
-versioned operational behavior. Shared memory fills the gap for useful, reviewed
-experience that has not yet become either.
+Knowledge Base provides retrieval over authoritative documents. Skills provide versioned
+operational behavior. Shared memory holds useful, reviewed experience that has not yet
+become either.
 
 ## Information Lifecycle
 

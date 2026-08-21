@@ -5,11 +5,10 @@
 多用户共用一个智能体（agent）时，个人记忆严格隔离，而有价值的经验经人工审核后成为团队
 共享知识。基于 Amazon Bedrock AgentCore Memory 的 AWS 参考实现。
 
-**企业里稀缺的不是记忆存储，是让经验被写下来的那一刻。** Knowledge Base 与 Skills 的困难
-从来不在存储或检索，而在于没有自然的写入触发点。所以本项目治理的是共享记忆的**写入边界**，
-而 KB 与 Skills 不是它的竞品，是它的下游。
+共享记忆的主要工程难点在于何时、由谁将经验写入共享层。Knowledge Base 与 Skills 承载
+稳定知识；本项目治理它们上游的共享记忆**写入边界**，为知识沉淀提供明确的触发与审核路径。
 
-**想先看结论**：[实验报告](docs/实验报告.md)（真实运行 + 14 项检查）·
+**实测结果**：[实验报告](docs/实验报告.md)（真实运行 + 14 项检查）·
 [演示手册](docs/演示手册.md)（端到端跑一遍）
 
 ## 共享记忆链路
@@ -45,7 +44,7 @@ flowchart LR
 每条依据的官方原文、实现位置与实测证据都在 **[AWS 官方背书](docs/AWS官方背书.md)**；该文档同时
 列出[不可作为 AWS 官方来源引用](docs/AWS官方背书.md#不可作为-aws-官方来源引用)的部分。
 
-**两个 Memory 资源是刻意的**：`PersonalMemory` 由运行时写入，actor 为已认证用户 ID；
+**本设计使用两个 Memory 资源**：`PersonalMemory` 由运行时写入，actor 为已认证用户 ID；
 `SharedProjectMemory` 只允许审核发布角色写入。相比单资源加命名空间约定，边界可表达为 IAM
 里的资源 ARN，而非处处都要写对的字符串比较。
 
@@ -55,13 +54,14 @@ flowchart LR
 
 ## 为什么这样分层
 
-记忆是**带权威等级的受治理资产**，不是一个更聪明的向量库。三句概括，不依赖任何平台
+本项目将记忆视为**带权威等级的受治理资产**，向量检索只是其中一个实现组件。以下三点
+不依赖任何平台
 （完整论证见 **[为什么按写入权威分层](docs/为什么按写入权威分层.md)**）：
 
 - 知识分层按**「谁有权改」**而非按 episodic/semantic 划分 —— 冲突裁决因此从语义判断变成
   查表，而查表可以在检索之前完成，不需要模型参与。
 - 检索优先级是**全序**，且随上下文一起交给模型：实时数据 > Skills > 权威文档 > 已审团队
-  记忆 > 个人偏好。这把「哪些记忆相关」（无解）换成「哪种权威胜出」（有解）。
+  记忆 > 个人偏好。系统据此先确定冲突信息的权威顺序，再执行相关性判断。
 - 共享层是**知识资产的预备区**：比向量库有治理，比写文档摩擦小，稳定后向上晋升。
 
 各项取舍的依据与反向证据见 **[设计取舍依据](docs/设计取舍依据.md)**；信任边界与信息生命
@@ -147,7 +147,7 @@ Knowledge Base ID 是集成参数，非本堆栈创建的资源：真实可用�
 | [实验报告](docs/实验报告.md) | [scenario-test-report](docs/scenario-test-report.md) | 真实实测过程与 14 项检查结果 |
 | [架构设计](docs/架构设计.md) | [architecture](docs/architecture.md) | 信任边界、检索优先级、信息生命周期 |
 | [设计取舍依据](docs/设计取舍依据.md) | [design-rationale](docs/design-rationale.md) | 核心判断的取舍理由与外部证据 |
-| [为什么按写入权威分层](docs/为什么按写入权威分层.md) | [why-layer-by-write-authority](docs/why-layer-by-write-authority.md) | 不依赖任何平台的分层论证与承重边界 |
+| [为什么按写入权威分层](docs/为什么按写入权威分层.md) | [why-layer-by-write-authority](docs/why-layer-by-write-authority.md) | 不依赖任何平台的分层论证及其适用边界 |
 | [AWS 官方背书](docs/AWS官方背书.md) | [aws-alignment](docs/aws-alignment.md) | 每条主张对齐到 AWS 官方文档，含实现位置与实测证据 |
 | [下一步演进](docs/下一步演进.md) | [roadmap](docs/roadmap.md) | 按优先级排列的演进项，含取代语义与捕获入口设计 |
 | [定位分析](docs/定位分析.md) | [positioning-analysis](docs/positioning-analysis.md) | 外部调研笔记：差异化在哪、四个必答反驳、不可引用清单 |

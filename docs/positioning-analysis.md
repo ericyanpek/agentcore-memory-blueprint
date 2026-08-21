@@ -33,19 +33,19 @@ Wherever the current state differs from the original judgment, it is marked with
 "**Current state**" note rather than quietly editing the judgment away — where a judgment was
 wrong is itself a useful record.
 
-## The positioning in one sentence
+## Positioning
 
-What is scarce in an enterprise is not memory storage, it is **the moment at which experience
-gets written down**. This project puts curation at the write boundary of shared memory:
-structured proposal, policy gate, human review, verbatim storage, attributable and revocable.
+The main engineering problem in shared memory is deciding when and by whom experience may
+enter the shared tier. This project puts curation at that write boundary: structured
+proposal, policy gate, human review, verbatim storage, attributable and revocable.
 
-Knowledge Bases and Skills are not its competitors, they are downstream of it.
+Knowledge Bases and Skills hold downstream knowledge artifacts after governance and
+stabilization.
 
-## The differentiation splits into three cells
+## Analyze differentiation across three capabilities
 
-This is the most important structure in the document. Treating "memory governance" as one
-thing mixes the already-solved part with the genuinely empty part, and the most valuable cell
-is the one nobody then sees.
+Separating memory governance into authorization, curation, and maintenance distinguishes
+established capabilities, project differentiation, and current gaps.
 
 | Cell | The question it asks | State of the industry | This project |
 |---|---|---|---|
@@ -53,14 +53,14 @@ is the one nobody then sees.
 | Curation | Is this fact fit to be shared | **Empty across the industry** | The differentiation is here |
 | Maintenance | Is this fact still true | Automated implementations exist, shown unreliable | Currently missing |
 
-### Authorization: do not spend the page count here
+### Authorization: established controls
 
 Zep's ABAC (policy bound to an API key, write permission fail-closed), Cognee's dataset-level
 ACL, and Databricks Unity Catalog all cover this cell (all unverified). This project
-implements it with IAM condition keys and two Memory resources, which is the right engineering
-choice but not a new one. **Spending the page count here gives the differentiation away.**
+implements it with IAM condition keys and two Memory resources, which is a sound engineering
+choice but not a project differentiator.
 
-### Curation: this is where the gap is
+### Curation: primary differentiation
 
 Citations behind "curation is empty" (all unverified): Letta states "when a block is shared,
 all attached agents can read and write to it"; Databricks states "Scope is the isolation
@@ -74,7 +74,7 @@ governance surface that lets a human review writes before they enter long-term s
 The shape all of this material points at: sharing is a **permission problem**, and the written
 content itself has no gate.
 
-### Maintenance: the best argument for a human gate
+### Maintenance: rationale for a human gate
 
 This cell yields an argument stronger than the security one (all unverified): the STALE
 benchmark (arXiv:2605.06527) reports that frontier models with a purpose-built memory
@@ -87,7 +87,7 @@ The inference: **automated maintenance is unreliable, therefore a human is neede
 more usable than "review is needed because it is unsafe", because it does not depend on
 assuming an attacker.
 
-## The countervailing 2026 trend must be conceded up front
+## The countervailing 2026 trend
 
 | Product | Date | What it does |
 |---|---|---|
@@ -98,19 +98,19 @@ assuming an attacker.
 (All three unverified.) The TencentDB entry deserves the most attention: it puts status into
 the record itself, which is precisely the maintenance cell this project lacks.
 
-The industry direction is "**share first, remediate later**", and this project is the only one
-going "approve first". That is the differentiation and also a **burden of argument** — going
-against the trend is not the same as being right, and the reason has to be stated.
+The surveyed material indicates an industry preference for "**share first, remediate
+later**"; this project uses "approve first". That difference requires its own justification
+and is not validated merely by departing from the prevailing approach.
 
-## The innovation is not the approval flow, it is capture economics
+## Differentiation lies in capture economics, not approval flow
 
 The current documentation locates the innovation in "governance / approval / submission", and
 approval is the least new of the three cells — this project's own
 [design-rationale.md](design-rationale.md) concedes that the candidate state machine is
 near-isomorphic to the AgentCore Registry.
 
-**The position nobody occupies is: reducing the agent-memory problem to the incentive
-structure of knowledge contribution.**
+This project further analyzes the agent-memory problem as an incentive structure for
+knowledge contribution.
 
 On theory (all unverified): Cabrera & Cabrera, "Knowledge-Sharing Dilemmas" (Organization
 Studies 23(5):687–710, 2002), frames knowledge contribution as a public-goods dilemma, stating
@@ -133,14 +133,14 @@ Cases of successful iteration rely on one class of mechanism only: a gate in the
 incident trigger, a periodic ablation or a GC agent proposing deletions — **all of them lower
 the cost of contributing at the moment the context is hottest.**
 
-Suggested formulation: the problem with KBs and Skills was never storage or retrieval, it is
-that **there is no natural write trigger**; and the public-goods dilemma guarantees that
-without a trigger there is no contribution. **The capture trigger is the product; the approval
-flow is only what makes it trustworthy.**
+Suggested formulation: KBs and Skills address storage and retrieval, while the remaining gap
+is **the absence of a natural write trigger**. The public-goods dilemma further reduces
+contribution when no trigger exists. The capture trigger determines whether contribution
+occurs; the approval flow establishes trust in that contribution.
 
 ## Three counterexamples inside this project
 
-The argument gets broken by our own repository first, so it is recorded here.
+The following three repository facts directly limit the current positioning argument.
 
 | Counterexample | Original observation (2026-08-14) | Current state |
 |---|---|---|
@@ -148,21 +148,21 @@ The argument gets broken by our own repository first, so it is recorded here.
 | Promotion path broken in code | `src/handlers/mark_status.py:52` emits `memory.promotion.proposed` with no EventBridge rule subscribing (verified as true) | **Fixed.** A rule routes it to a KMS-encrypted SQS queue drained by a human, and the README architecture diagram now reads "human ingestion / human review" |
 | Proposals are not agent-initiated | The candidates in the scenario report were produced by a script calling the API directly; `poc/runtime_agent.py` has no proposal tool | Unchanged. The capture hook is still unimplemented |
 
-The first is the ugliest: `skills/validate-revenue-metric/SKILL.md` ends with "Future changes
-require a Git review and a validation test against a representative dataset" — which is exactly
-the path **that is never walked a second time**, written by this repository's own hand.
+The first is particularly direct: `skills/validate-revenue-metric/SKILL.md` ends with "Future
+changes require a Git review and a validation test against a representative dataset", but the
+repository history contains no subsequent modification.
 
 One passage can be turned around and reused: the README's explanation of why no Knowledge Base
 was built ("a genuinely usable Knowledge Base needs a defined data source, a chunking strategy,
 a vector store, an ingestion job, and retrieval validation") **is itself the reason shared
 memory exists** — the friction is too high, so experience never lands.
 
-## Four rebuttals that must be written into the documentation
+## Four rebuttals the documentation must address
 
 ### One: "stale and confident" is worse than "absent"
 
 "a stale AGENTS.md is worse than no AGENTS.md" (unverified). So "imperfect capture vs. total
-loss" **is not an automatic win**.
+loss" **does not establish that the former is preferable**.
 
 The mechanism holds on its own, independent of any citation: vector similarity measures topical
 relevance, not temporal relevance. A pricing page from 18 months ago and this morning's update
@@ -201,8 +201,8 @@ deduplication is still unimplemented.
 
 ### Four: reviewer throughput and fatigue
 
-These are the only two **Verified** external citations in the document — the source pages were
-fetched and every sub-claim matched word for word.
+The following are the document's two **Verified** external citations. The source pages were
+fetched and every sub-claim was checked word for word.
 
 - arXiv:2607.02579, *When Not to Write Memory: Governing False Promotion from Correlated Agent
   Traces* (Yijiashun Qi, Xiang Xu, Yuxuan Li). **Verified**: false promotion 0.371→0.032; among
@@ -226,10 +226,10 @@ capture with user approval" — addressing the trigger problem and reviewer fati
 **Current state**: the limitations section now includes reviewer fatigue at +14.5pp and GovMem's
 0/133.
 
-## What the argument bears
+## Limits of the argument
 
-The sentence that must go into the positioning: **memory governance is load-bearing within the
-memory domain, not across the whole agent stack.**
+The positioning must state that **memory governance addresses governance objectives within
+the memory domain, not the effectiveness of the entire agent system.**
 
 Agent effectiveness is the job of the observe → evaluate → optimize loop; memory governance is
 **one input** to that loop. This sentence deflects two classes of objection at once:
@@ -244,13 +244,13 @@ correctness, whereas the objective function of governance is on the poisoning si
 
 A deduction, so as not to inflate attack figures: an independent replication in 2026-01
 (arXiv:2601.05504, unverified) finds that "realistic conditions with pre-existing legitimate
-memories dramatically reduce attack effectiveness". What holds up is the diffusion side —
-**sharing is precisely the mechanism that turns a local error into a broadcast error**, and the
-legitimacy of governance is there, not in the absolute attack success rate.
+memories dramatically reduce attack effectiveness". The more defensible evidence concerns
+diffusion scope: **sharing can turn a local error into a team-wide error**. Governance is
+justified by controlling that scope, not by an absolute attack-success figure.
 
-## On "the industry ignores shared memory": use the defensible version
+## On "the industry ignores shared memory": use a verifiable formulation
 
-The strong version ("the industry ignores this axis") breaks on first contact. Do not use it.
+Do not use the absolute formulation that "the industry ignores this axis."
 
 In support (the cognitive-psychology lineage genuinely omits it, all unverified): CoALA
 (arXiv:2309.02427) has three dimensions — storage, action space, decision procedure — with no
@@ -258,7 +258,7 @@ scope dimension at all; the largest 2025–26 survey (arXiv:2512.13564, 47 autho
 forms/functions/dynamics and still has no scope axis; LangChain concedes "Right now, all memory
 is specific for that agent. We have no concept of user-level or org-level memory."
 
-Counterexamples that will be used against you (all unverified): the first of the three basic
+Counterexamples (all unverified): the first of the three basic
 dimensions in arXiv:2504.15965 is object (personal/system memory); Collaborative Memory
 (Accenture, arXiv:2505.18279) already names and formalizes the axis; arXiv:2606.24535 has a
 section literally titled "5.2 Memory Scopes"; Databricks states "The scope is required on every
@@ -291,12 +291,12 @@ unsourceable. **Do not write them into any document in this repository.**
 These six rows are not trivia. They are **six figures specific enough to look credible**, with
 nothing behind them. This is how the three earlier citation errors in this repository got in.
 
-## Three principles for whoever picks this up
+## Three principles for subsequent work
 
 1. **The differentiation is in curation, not authorization.**
 2. **The innovation is in capture economics, not the approval flow.**
 3. **Do not judge governance by QA accuracy; and do not claim governance improves answer
    quality.**
 
-Both halves of the third matter. Dropping the first half lets irrelevant evidence pull the
-argument off course; dropping the second makes the argument promise what it cannot bear.
+The third principle contains two independent constraints: do not use an unrelated metric to
+validate governance, and do not make an unverified claim about answer quality.

@@ -15,8 +15,9 @@ must answer:
 3. whether telemetry has redaction, encryption, retention, least privilege, and cost control;
 4. whether request, session, or trace ID can cross-locate the evidence.
 
-"The Console shows a chart" is not acceptance. If log delivery is absent, tracing is not
-enabled, or spans cannot be queried, report a telemetry gap rather than "no errors."
+A Console chart is not sufficient acceptance evidence. If log delivery is absent, tracing
+is not enabled, or spans cannot be queried, record a telemetry gap rather than conclude
+that there were no errors.
 
 ## 2. Three-Layer Telemetry Model
 
@@ -201,4 +202,3 @@ work, but functional success is not operational readiness.
 - [Knowledge Bases ingestion logging](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-bases-logging.html)
 - [Firehose Apache Iceberg destination](https://docs.aws.amazon.com/firehose/latest/dev/apache-iceberg-destination.html)
 - [Amazon S3 Tables](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html)
-

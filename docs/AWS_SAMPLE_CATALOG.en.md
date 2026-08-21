@@ -1,7 +1,8 @@
 # AgentCore Memory AWS Official Sample Catalog
 
 > English translation. Chinese primary: [AWS_SAMPLE_CATALOG.md](AWS_SAMPLE_CATALOG.md).
-> Reviewed 2026-08-04. Samples support learning and experiment design, not compliance proof.
+> Reviewed 2026-08-04. Samples support capability validation and experiment design; they
+> are not production compliance evidence.
 
 ## 1. Pinned Snapshot
 
